@@ -3,8 +3,8 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 const ctx = canvas.getContext('2d');
 
-const tileWidth = 80;
-const tileHeight = 40;
+const tileWidth = 64;
+const tileHeight = 32;
 const halfWidth = tileWidth / 2;
 const halfHeight = tileHeight / 2;
 const gridMaxX = 20;
@@ -16,17 +16,28 @@ ctx.clearRect(0, 0, canvas.width, canvas.height);
 const grassColor = "#208040";
 const hoverColor = "#104020";
 let highlighted = undefined;
+let sprites = undefined;
 
-const drawTile = (point, color) =>{
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(point.x - halfWidth, point.y);
-    ctx.lineTo(point.x, point.y - halfHeight);
-    ctx.lineTo(point.x + halfWidth, point.y);
-    ctx.lineTo(point.x, point.y + halfHeight);
-    ctx.lineTo(point.x - halfWidth, point.y);
-    ctx.fill();
+const drawTile = (image, point) =>{
+    ctx.drawImage(image, point.x - halfWidth, point.y - halfHeight);
 };
+
+const loadSpriteSheet = () =>{
+    const image = new Image();
+    image.src = "assets/sprite-sheet.png";
+    image.onload = () => {
+        Promise.all([
+            createImageBitmap(image, 0, 50, 64, 128),
+            createImageBitmap(image, 64, 88, 64, 128),
+            createImageBitmap(image, 128, 8, 64, 128),
+            createImageBitmap(image, 192, 88, 64, 128)
+        ]).then(results => {
+            sprites = results;
+            updateGrid(grid);
+        })
+    };
+}
+
 
 const createGrid = () =>{
     const grid = [];
@@ -60,9 +71,9 @@ const updateGrid = (grid) =>{
             let gridCoord = {x: j, y: i};
             let screenCoord = gridToScreen(gridCoord);
             if(highlighted !== undefined && highlighted.x === gridCoord.x && highlighted.y === gridCoord.y)
-                drawTile(screenCoord, hoverColor);
+                drawTile(sprites[3], screenCoord);
             else
-                drawTile(screenCoord, grassColor);
+                drawTile(sprites[1], screenCoord);
         }
     }
 };
@@ -74,8 +85,8 @@ canvas.addEventListener("mousemove", (e) =>{
     }
     else
         highlighted = undefined;
-    updateGrid(grid);
+    updateGrid(grid, sprites);
 });
 
+loadSpriteSheet();
 let grid = createGrid();
-updateGrid(grid);

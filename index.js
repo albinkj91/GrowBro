@@ -9,7 +9,7 @@ const halfWidth = tileWidth / 2;
 const halfHeight = tileHeight / 2;
 const gridMaxX = 20;
 const gridMaxY = 20;
-const offsetX = canvas.width / 2;
+const offsetX = canvas.width / 2 - halfWidth;
 const offsetY = canvas.height / 2 - (gridMaxY * tileHeight)/2;
 
 ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -17,6 +17,7 @@ const grassColor = "#208040";
 const hoverColor = "#104020";
 let highlighted = undefined;
 let sprites = undefined;
+const grid = undefined;
 
 const drawTile = (image, point) =>{
     ctx.drawImage(image, point.x - halfWidth, point.y - halfHeight);
@@ -33,21 +34,19 @@ const loadSpriteSheet = () =>{
             createImageBitmap(image, 192, 88, 64, 128)
         ]).then(results => {
             sprites = results;
-            updateGrid(grid);
+            requestAnimationFrame(updateGrid);
         })
     };
 }
 
 
 const createGrid = () =>{
-    const grid = [];
     for(let i = 0; i < gridMaxY; i++){
         grid[i] = new Array();
         for(let j = 0; j < gridMaxX; j++){
             grid[i][j] = 0;
         }
     }
-    return grid;
 };
 
 const screenToGrid = (point) =>{
@@ -64,7 +63,7 @@ const gridToScreen = (point) =>{
     };
 };
 
-const updateGrid = (grid) =>{
+const updateGrid = () =>{
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for(let i = 0; i < gridMaxY; i++){
         for(let j = 0; j < gridMaxX; j++){
@@ -76,6 +75,7 @@ const updateGrid = (grid) =>{
                 drawTile(sprites[1], screenCoord);
         }
     }
+    requestAnimationFrame(updateGrid);
 };
 
 canvas.addEventListener("mousemove", (e) =>{
@@ -85,8 +85,6 @@ canvas.addEventListener("mousemove", (e) =>{
     }
     else
         highlighted = undefined;
-    updateGrid(grid, sprites);
 });
 
 loadSpriteSheet();
-let grid = createGrid();

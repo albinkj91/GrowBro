@@ -16,28 +16,32 @@ ctx.clearRect(0, 0, canvas.width, canvas.height);
 const grassColor = "#208040";
 const hoverColor = "#104020";
 let highlighted = undefined;
-let sprites = undefined;
+let sprites;
 const grid = undefined;
+const image = new Image();
+image.src = "assets/sprite-sheet.png";
 
 const drawTile = (image, point) =>{
     ctx.drawImage(image, point.x - halfWidth, point.y - halfHeight);
 };
 
-const loadSpriteSheet = () =>{
-    const image = new Image();
-    image.src = "assets/sprite-sheet.png";
-    image.onload = () => {
-        Promise.all([
-            createImageBitmap(image, 0, 50, 64, 128),
-            createImageBitmap(image, 64, 88, 64, 128),
-            createImageBitmap(image, 128, 8, 64, 128),
-            createImageBitmap(image, 192, 88, 64, 128)
-        ]).then(results => {
-            sprites = results;
-            requestAnimationFrame(updateGrid);
-        })
-    };
-}
+
+            //createImageBitmap(image, 64, 88, 64, 128),
+            //createImageBitmap(image, 128, 8, 64, 128),
+            //createImageBitmap(image, 192, 88, 64, 128)
+
+//image.onload = () =>{
+//    const image = new Image();
+//    image.src = "assets/crops-v2/crops.png";
+//    Promise.all([
+//        createImageBitmap(image, 0, 32, 32, 32),
+//        createImageBitmap(image, 0, 2*32, 32, 32),
+//        createImageBitmap(image, 0, 3*32, 32, 32),
+//        createImageBitmap(image, 0, 4*32, 32, 32)
+//    ]).then(results => {
+//        sprites.push(results);
+//    });
+//};
 
 
 const createGrid = () =>{
@@ -64,18 +68,19 @@ const gridToScreen = (point) =>{
 };
 
 const updateGrid = () =>{
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for(let i = 0; i < gridMaxY; i++){
-        for(let j = 0; j < gridMaxX; j++){
-            let gridCoord = {x: j, y: i};
-            let screenCoord = gridToScreen(gridCoord);
-            if(highlighted !== undefined && highlighted.x === gridCoord.x && highlighted.y === gridCoord.y)
-                drawTile(sprites[3], screenCoord);
-            else
-                drawTile(sprites[1], screenCoord);
-        }
-    }
-    requestAnimationFrame(updateGrid);
+    console.log("here", sprites);
+    //ctx.clearRect(0, 0, canvas.width, canvas.height);
+    //for(let i = 0; i < gridMaxY; i++){
+    //    for(let j = 0; j < gridMaxX; j++){
+    //        let gridCoord = {x: j, y: i};
+    //        let screenCoord = gridToScreen(gridCoord);
+    //        if(highlighted !== undefined && highlighted.x === gridCoord.x && highlighted.y === gridCoord.y)
+    //            drawTile(arr[0][0], screenCoord);
+    //        else
+    //            drawTile(arr[0][0], screenCoord);
+    //    }
+    //}
+    //requestAnimationFrame(updateGrid);
 };
 
 canvas.addEventListener("mousemove", (e) =>{
@@ -87,4 +92,10 @@ canvas.addEventListener("mousemove", (e) =>{
         highlighted = undefined;
 });
 
-loadSpriteSheet();
+image.onload = async () => {
+    const bitmap = await createImageBitmap(image, 0, 50, 64, 128)
+    //.then(loadCrops())
+    //.then(console.log(sprites));
+    sprites = bitmap;
+    requestAnimationFrame(updateGrid);
+}

@@ -1,6 +1,6 @@
 const canvas = document.querySelector("#canvas");
 canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+canvas.height = window.innerHeight - 25;
 const ctx = canvas.getContext('2d');
 
 const tileWidth = 64;
@@ -26,7 +26,7 @@ const drawTile = (image, point) =>{
 };
 
 const drawCrop = (image, point) =>{
-    ctx.drawImage(image, point.x - halfWidth/2.0, point.y - 54);
+    ctx.drawImage(image, point.x - halfWidth/2, point.y - 54);
 };
 
 const createGrid = () =>{
@@ -55,13 +55,14 @@ const gridToScreen = (point) =>{
 const updateGrid = () =>{
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(logo, 0, 0);
+    drawMenu([1, 2, 3, 4, 5, 6, 7]);
     for(let i = 0; i < gridMaxY; i++){
         for(let j = 0; j < gridMaxX; j++){
             let gridCoord = {x: j, y: i};
             let screenCoord = gridToScreen(gridCoord);
             if(highlighted !== undefined && highlighted.x === gridCoord.x && highlighted.y === gridCoord.y)
             {
-                drawTile(tiles[1], screenCoord);
+                drawTile(tiles[4], screenCoord);
                 drawCrop(crops[3][27], screenCoord);
             }
             else
@@ -118,6 +119,15 @@ const loadCrops = async (src) => {
             )
         }));
     return result;
+};
+
+const drawMenu = (items) =>{
+    const width = items.length * 32;
+    const height = 96;
+    const offsetX = canvas.width / 2 - width/2;
+    const offsetY = canvas.height - height - 5;
+    ctx.fillStyle = "red";
+    ctx.fillRect(offsetX, offsetY, width, height);
 };
 
 const start = async () =>{

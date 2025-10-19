@@ -21,6 +21,84 @@ let crops = [];
 let logo;
 const grid = [];
 
+const cropNames = [
+    "Russet potatoes",
+    "Gold potatoes",
+    "Purple potatoes",
+    "Sweet potatoes",
+    "Cassava",
+    "Daikon radish",
+    "Carrots",
+    "Parsnips",
+    "Radishes",
+    "Beets",
+    "Turnips",
+    "Rutabaga",
+    "Garlic",
+    "Yellow onion",
+    "Red onion",
+    "White onion",
+    "Scallion",
+    "Hot pepper",
+    "Green bell pepper",
+    "Red bell pepper",
+    "Orange bell pepper",
+    "Yellow bell pepper",
+    "Chili peppers",
+    "Watermelon",
+    "Honeydew melon",
+    "Cantaloupe melon",
+    "Acorn squash",
+    "Pumpkin",
+    "Crookneck squash",
+    "Butternut squash",
+    "Corn",
+    "Corn",
+    "Asparagus",
+    "Rhubarb",
+    "Romaine lettuce",
+    "Iceberg lettuce",
+    "Kale",
+    "Red cabbage",
+    "Green cabbage",
+    "Celery",
+    "Bok choy",
+    "Fennel bulb",
+    "Brussels sprouts",
+    "Cauliflower",
+    "Broccoli",
+    "Artichoke",
+    "Leeks",
+    "Kohlrabi",
+    "Eggplant",
+    "Zucchini",
+    "Yellow squash",
+    "Cucumber",
+    "Strawberry",
+    "Blackberries",
+    "Raspberries",
+    "Blueberries",
+    "Red grapes",
+    "Green grapes",
+    "Cherry tomatoes",
+    "Tomatoes",
+    "Large tomatoes",
+    "Sugar peas",
+    "Hops",
+    "Green beans",
+    "Coffee",
+    "Pineapple",
+    "Kiwi"
+];
+
+class Crop{
+    constructor(name, images){
+        this.name = name;
+        this.images = images;
+        this.growthStage = 0;
+    }
+}
+
 const drawTile = (image, point) =>{
     ctx.drawImage(image, point.x - halfWidth, point.y - halfHeight);
 };
@@ -52,10 +130,14 @@ const gridToScreen = (point) =>{
     };
 };
 
+
+let startTime = performance.now();
+
 const updateGrid = () =>{
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(logo, 0, 0);
-    drawMenu([1, 2, 3, 4, 5, 6, 7]);
+    drawMenu(Array.from({length: 20}, (v, i) => i)); // Change this to actual menu items.
+
     for(let i = 0; i < gridMaxY; i++){
         for(let j = 0; j < gridMaxX; j++){
             let gridCoord = {x: j, y: i};
@@ -63,7 +145,16 @@ const updateGrid = () =>{
             if(highlighted !== undefined && highlighted.x === gridCoord.x && highlighted.y === gridCoord.y)
             {
                 drawTile(tiles[4], screenCoord);
-                drawCrop(crops[3][27], screenCoord);
+                const crop = crops[9];
+                drawCrop(crop.images[crop.growthStage], screenCoord);
+                const now = performance.now();
+                if(now - startTime > 1000)
+                {
+                    crop.growthStage++;
+                    startTime = now;
+                }
+                if(crop.growthStage > 3)
+                    crop.growthStage = 0;
             }
             else
                 drawTile(tiles[1], screenCoord);
@@ -126,8 +217,10 @@ const drawMenu = (items) =>{
     const height = 96;
     const offsetX = canvas.width / 2 - width/2;
     const offsetY = canvas.height - height - 5;
-    ctx.fillStyle = "red";
-    ctx.fillRect(offsetX, offsetY, width, height);
+    ctx.strokeStyle = "#503030";
+    ctx.lineWidth = 2;
+    ctx.rect(offsetX, offsetY, width, height);
+    ctx.stroke();
 };
 
 const start = async () =>{
@@ -137,7 +230,10 @@ const start = async () =>{
         loadLogo()
     ]);
     tiles = Array.from(t);
-    crops = Array.from(c);
+    const cropImages = Array.from(c);
+    for(let i = 0; i < cropImages.length; i++){
+        crops.push(new Crop(cropNames[i], [cropImages[0][i], cropImages[1][i], cropImages[2][i], cropImages[3][i]]));
+    }
     logo = l;
     requestAnimationFrame(updateGrid);
 };

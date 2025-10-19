@@ -16,7 +16,9 @@ ctx.clearRect(0, 0, canvas.width, canvas.height);
 const grassColor = "#208040";
 const hoverColor = "#104020";
 let highlighted;
-let sprites = [];
+let tiles = [];
+let crops = [];
+let logo;
 const grid = [];
 
 const drawTile = (image, point) =>{
@@ -24,27 +26,8 @@ const drawTile = (image, point) =>{
 };
 
 const drawCrop = (image, point) =>{
-    ctx.drawImage(image, point.x - halfWidth/2.0, point.y - halfHeight/2.0 - halfHeight);
+    ctx.drawImage(image, point.x - halfWidth/2.0, point.y - 54);
 };
-
-            //createImageBitmap(image, 0, 50, 64, 128)
-            //createImageBitmap(image, 64, 88, 64, 128),
-            //createImageBitmap(image, 128, 8, 64, 128),
-            //createImageBitmap(image, 192, 88, 64, 128)
-
-//image.onload = () =>{
-//    const image = new Image();
-//    image.src = "assets/crops-v2/crops.png";
-//    Promise.all([
-//        createImageBitmap(image, 0, 32, 32, 32),
-//        createImageBitmap(image, 0, 2*32, 32, 32),
-//        createImageBitmap(image, 0, 3*32, 32, 32),
-//        createImageBitmap(image, 0, 4*32, 32, 32)
-//    ]).then(results => {
-//        sprites.push(results);
-//    });
-//};
-
 
 const createGrid = () =>{
     for(let i = 0; i < gridMaxY; i++){
@@ -71,17 +54,18 @@ const gridToScreen = (point) =>{
 
 const updateGrid = () =>{
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(logo, 0, 0);
     for(let i = 0; i < gridMaxY; i++){
         for(let j = 0; j < gridMaxX; j++){
             let gridCoord = {x: j, y: i};
             let screenCoord = gridToScreen(gridCoord);
             if(highlighted !== undefined && highlighted.x === gridCoord.x && highlighted.y === gridCoord.y)
             {
-                drawTile(sprites[0][1], screenCoord);
-                drawCrop(sprites[1][3], screenCoord);
+                drawTile(tiles[1], screenCoord);
+                drawCrop(crops[3][27], screenCoord);
             }
             else
-                drawTile(sprites[0][1], screenCoord);
+                drawTile(tiles[1], screenCoord);
         }
     }
     requestAnimationFrame(updateGrid);
@@ -96,41 +80,55 @@ canvas.addEventListener("mousemove", (e) =>{
         highlighted = undefined;
 });
 
-const loadSpriteSheet1 = async (src) => {
+const loadLogo = async (src) => {
+    const image = new Image();
+    image.src = "assets/crops-v2/crops.png";
+    await image.decode();
+
+    const result = await createImageBitmap(image, 0, 21*32, 11*32, 64);
+    return result;
+};
+
+const loadTiles = async (src) => {
     const image = new Image();
     image.src = "assets/sprite-sheet.png";
     await image.decode();
 
     const result = await Promise.all([
-        createImageBitmap(image, 0, 50, 64, 128),
+        createImageBitmap(image, 0, 12, 64, 128),
         createImageBitmap(image, 64, 88, 64, 128),
         createImageBitmap(image, 128, 8, 64, 128),
-        createImageBitmap(image, 192, 88, 64, 128)
+        createImageBitmap(image, 192, 88, 64, 128),
+        createImageBitmap(image, 256, 88, 64, 128)
     ]);
     return result;
 };
 
-const loadSpriteSheet2 = async (src) => {
+const loadCrops = async (src) => {
     const image = new Image();
     image.src = "assets/crops-v2/crops.png";
     await image.decode();
 
-    const result = await Promise.all([
-        createImageBitmap(image, 0, 32, 32, 32),
-        createImageBitmap(image, 0, 3*32, 32, 32),
-        createImageBitmap(image, 0, 5*32, 32, 32),
-        createImageBitmap(image, 0, 7*32, 32, 32)
-    ]);
+    const result = await Promise.all(
+        Array.from({ length: 10 }, async (v, i) =>{
+            return await Promise.all(
+                Array.from({ length: 31 }, (v2, j) =>{
+                    return createImageBitmap(image, j*32, i*64, 32, 64)
+                })
+            )
+        }));
     return result;
 };
 
 const start = async () =>{
-    const [tiles, crops] = await Promise.all([
-        loadSpriteSheet1(),
-        loadSpriteSheet2()
+    const [t, c, l] = await Promise.all([
+        loadTiles(),
+        loadCrops(),
+        loadLogo()
     ]);
-    sprites.push(tiles);
-    sprites.push(crops);
+    tiles = Array.from(t);
+    crops = Array.from(c);
+    logo = l;
     requestAnimationFrame(updateGrid);
 };
 

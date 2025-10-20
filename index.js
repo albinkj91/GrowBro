@@ -136,7 +136,7 @@ let startTime = performance.now();
 const updateGrid = () =>{
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(logo, 0, 0);
-    drawMenu(Array.from({length: 20}, (v, i) => i)); // Change this to actual menu items.
+    drawMenu(crops);
 
     for(let i = 0; i < gridMaxY; i++){
         for(let j = 0; j < gridMaxX; j++){
@@ -204,7 +204,7 @@ const loadCrops = async (src) => {
     const result = await Promise.all(
         Array.from({ length: 10 }, async (v, i) =>{
             return await Promise.all(
-                Array.from({ length: 31 }, (v2, j) =>{
+                Array.from({ length: 32 }, (v2, j) =>{
                     return createImageBitmap(image, j*32, i*64, 32, 64)
                 })
             )
@@ -223,6 +223,21 @@ const drawMenu = (items) =>{
     ctx.stroke();
 };
 
+const transformCropsData = (cropImages) =>{
+    for(let i = 0; i < cropImages.length; i += 5){
+        for(let j = 0; j < cropImages[i].length; j++){
+            crops.push(new Crop(cropNames[i*32/5 + j],
+            [
+                cropImages[i][j],
+                cropImages[i+1][j],
+                cropImages[i+2][j],
+                cropImages[i+3][j],
+                cropImages[i+4][j]
+            ]));
+        }
+    }
+};
+
 const start = async () =>{
     const [t, c, l] = await Promise.all([
         loadTiles(),
@@ -231,9 +246,7 @@ const start = async () =>{
     ]);
     tiles = Array.from(t);
     const cropImages = Array.from(c);
-    for(let i = 0; i < cropImages.length; i++){
-        crops.push(new Crop(cropNames[i], [cropImages[0][i], cropImages[1][i], cropImages[2][i], cropImages[3][i]]));
-    }
+    transformCropsData(cropImages);
     logo = l;
     requestAnimationFrame(updateGrid);
 };

@@ -213,16 +213,22 @@ const loadCrops = async (src) => {
 };
 
 const drawMenu = (items) =>{
-    const width = items.length/5 * 40;
-    const height = 96;
+    const itemsToShow = items.slice(0, 25);
+    const width = itemsToShow.length * 64 + 20;
+    const height = 90;
     const offsetX = canvas.width / 2 - width/2;
     const offsetY = canvas.height - height - 5;
-    ctx.strokeStyle = "#503030";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 4;
+    ctx.fillStyle = "#906060";
+    ctx.strokeStyle = "#402020";
     ctx.strokeRect(offsetX, offsetY, width, height);
+    ctx.fillRect(offsetX, offsetY, width, height);
 
-    for(let i = 0; i < items.length; i += 5){
-        drawCrop(items[i].images[3], {x: offsetX + (i/5-items/5/2)*32 + 16, y: offsetY + 60});
+    ctx.fillStyle = "#bb9090";
+    for(let i = 0; i < itemsToShow.length; i++){
+        ctx.strokeRect(offsetX + i*64 + 18, offsetY + 8, 48, 74);
+        ctx.fillRect(offsetX + i*64 + 18, offsetY + 8, 48, 74);
+        drawCrop(itemsToShow[i].images[3], {x: offsetX + i*64 + 42, y: offsetY + 68});
     }
 };
 

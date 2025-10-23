@@ -151,11 +151,11 @@ let startTime = performance.now();
 const updateGrid = () =>{
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(logo, 0, 0);
-    //drawMenu(crops);
-    //if(index !== -1){
-    //    ctx.strokeStyle = "red";
-    //    ctx.strokeRect(calcMenuOffsetX(crops) + index*64 + 18, menuOffsetY + 8, 48, 74);
-    //}
+    drawMenu(crops);
+    if(index !== -1){
+        ctx.strokeStyle = "red";
+        ctx.strokeRect(calcMenuOffsetX(crops) + index*64 + 18, menuOffsetY + 8, 48, 74);
+    }
 
     for(let i = 0; i < gridMaxY; i++){
         for(let j = 0; j < gridMaxX; j++){
@@ -189,7 +189,7 @@ canvas.addEventListener("mousemove", (e) =>{
     }
     else
         highlighted = undefined;
-    //index = screenToMenuIndex({x: e.offsetX, y: e.offsetY}, itemsToShow);
+    index = screenToMenuIndex({x: e.offsetX, y: e.offsetY}, itemsToShow);
 });
 
 const loadLogo = async (src) => {

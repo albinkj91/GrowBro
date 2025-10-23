@@ -27,7 +27,7 @@ let crops = [];
 let logo;
 const grid = [];
 let itemsToShow;
-let index;
+let menuIndex;
 
 const cropNames = [
     "Russet potatoes",
@@ -148,13 +148,13 @@ const screenToMenuIndex = (point, items) =>{
 
 let startTime = performance.now();
 
-const updateGrid = () =>{
+const update = () =>{
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(logo, 0, 0);
     drawMenu(crops);
-    if(index !== -1){
-        ctx.strokeStyle = "red";
-        ctx.strokeRect(calcMenuOffsetX(crops) + index*64 + 18, menuOffsetY + 8, 48, 74);
+    if(menuIndex !== -1){
+        ctx.strokeStyle = "#80ff80";
+        ctx.strokeRect(calcMenuOffsetX(crops) + menuIndex*64 + 11, menuOffsetY + 8, 64, 74);
     }
 
     for(let i = 0; i < gridMaxY; i++){
@@ -179,7 +179,7 @@ const updateGrid = () =>{
                 drawTile(tiles[1], screenCoord);
         }
     }
-    requestAnimationFrame(updateGrid);
+    requestAnimationFrame(update);
 };
 
 canvas.addEventListener("mousemove", (e) =>{
@@ -189,7 +189,7 @@ canvas.addEventListener("mousemove", (e) =>{
     }
     else
         highlighted = undefined;
-    index = screenToMenuIndex({x: e.offsetX, y: e.offsetY}, itemsToShow);
+    menuIndex = screenToMenuIndex({x: e.offsetX, y: e.offsetY}, itemsToShow);
 });
 
 const loadLogo = async (src) => {
@@ -252,8 +252,8 @@ const drawMenu = (items) =>{
 
     ctx.fillStyle = "#bb9090";
     for(let i = 0; i < itemsToShow.length; i++){
-        ctx.strokeRect(menuOffsetX + i*64 + 18, menuOffsetY + 8, 48, 74);
-        ctx.fillRect(menuOffsetX + i*64 + 18, menuOffsetY + 8, 48, 74);
+        ctx.strokeRect(menuOffsetX + i*64 + 11, menuOffsetY + 8, 64, 74);
+        ctx.fillRect(menuOffsetX + i*64 + 11, menuOffsetY + 8, 64, 74);
         drawCrop(itemsToShow[i].images[3], {x: menuOffsetX + i*64 + 42, y: menuOffsetY + 68});
     }
 };
@@ -284,7 +284,7 @@ const start = async () =>{
     transformCropsData(cropImages);
     logo = l;
     itemsToShow = crops.slice(0, 26)
-    requestAnimationFrame(updateGrid);
+    requestAnimationFrame(update);
 };
 
 start();

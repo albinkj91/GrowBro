@@ -5,12 +5,18 @@ const ctx = canvas.getContext('2d');
 
 const tileWidth = 64;
 const tileHeight = 32;
+const cropWidth = 32;
+const cropHeight = 64;
 const halfWidth = tileWidth / 2;
 const halfHeight = tileHeight / 2;
 const gridMaxX = 20;
 const gridMaxY = 20;
 const offsetX = canvas.width / 2 - halfWidth;
 const offsetY = canvas.height / 2 - (gridMaxY * tileHeight)/2;
+const menuHeight = 90;
+const menuItemWidth = 64;
+const menuItemSpacing = 20;
+const menuOffsetY = canvas.height - menuHeight - 5;
 
 ctx.clearRect(0, 0, canvas.width, canvas.height);
 const grassColor = "#208040";
@@ -20,6 +26,8 @@ let tiles = [];
 let crops = [];
 let logo;
 const grid = [];
+let itemsToShow;
+let index;
 
 const cropNames = [
     "Russet potatoes",
@@ -130,13 +138,24 @@ const gridToScreen = (point) =>{
     };
 };
 
+const screenToMenuIndex = (point, items) =>{
+    let index = Math.floor((point.x - calcMenuOffsetX(items) - 18)/64);
+    if(point.y >= menuOffsetY && point.y <= menuOffsetY + 90 && index >= 0)
+        return index;
+    return -1;
+};
+
 
 let startTime = performance.now();
 
 const updateGrid = () =>{
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(logo, 0, 0);
-    drawMenu(crops);
+    //drawMenu(crops);
+    //if(index !== -1){
+    //    ctx.strokeStyle = "red";
+    //    ctx.strokeRect(calcMenuOffsetX(crops) + index*64 + 18, menuOffsetY + 8, 48, 74);
+    //}
 
     for(let i = 0; i < gridMaxY; i++){
         for(let j = 0; j < gridMaxX; j++){
@@ -170,6 +189,7 @@ canvas.addEventListener("mousemove", (e) =>{
     }
     else
         highlighted = undefined;
+    //index = screenToMenuIndex({x: e.offsetX, y: e.offsetY}, itemsToShow);
 });
 
 const loadLogo = async (src) => {
@@ -205,30 +225,36 @@ const loadCrops = async (src) => {
         Array.from({ length: 10 }, async (v, i) =>{
             return await Promise.all(
                 Array.from({ length: 32 }, (v2, j) =>{
-                    return createImageBitmap(image, j*32, i*64, 32, 64)
+                    return createImageBitmap(image, j * cropWidth, i * cropHeight, cropWidth, cropHeight)
                 })
             )
         }));
     return result;
 };
 
+const calcMenuWidth = (items) =>{
+    return itemsToShow.length * menuItemWidth + menuItemSpacing;
+};
+
+const calcMenuOffsetX = (items) =>{
+    return canvas.width / 2 - calcMenuWidth(items) / 2;
+};
+
 const drawMenu = (items) =>{
-    const itemsToShow = items.slice(0, 25);
-    const width = itemsToShow.length * 64 + 20;
-    const height = 90;
-    const offsetX = canvas.width / 2 - width/2;
-    const offsetY = canvas.height - height - 5;
+    const itemsToShow = items.slice(0, 26);
+    const menuWidth = calcMenuWidth(items);
+    const menuOffsetX = calcMenuOffsetX(items);
     ctx.lineWidth = 4;
     ctx.fillStyle = "#906060";
     ctx.strokeStyle = "#402020";
-    ctx.strokeRect(offsetX, offsetY, width, height);
-    ctx.fillRect(offsetX, offsetY, width, height);
+    ctx.strokeRect(menuOffsetX, menuOffsetY, menuWidth, menuHeight);
+    ctx.fillRect(menuOffsetX, menuOffsetY, menuWidth, menuHeight);
 
     ctx.fillStyle = "#bb9090";
     for(let i = 0; i < itemsToShow.length; i++){
-        ctx.strokeRect(offsetX + i*64 + 18, offsetY + 8, 48, 74);
-        ctx.fillRect(offsetX + i*64 + 18, offsetY + 8, 48, 74);
-        drawCrop(itemsToShow[i].images[3], {x: offsetX + i*64 + 42, y: offsetY + 68});
+        ctx.strokeRect(menuOffsetX + i*64 + 18, menuOffsetY + 8, 48, 74);
+        ctx.fillRect(menuOffsetX + i*64 + 18, menuOffsetY + 8, 48, 74);
+        drawCrop(itemsToShow[i].images[3], {x: menuOffsetX + i*64 + 42, y: menuOffsetY + 68});
     }
 };
 
@@ -257,6 +283,7 @@ const start = async () =>{
     const cropImages = Array.from(c);
     transformCropsData(cropImages);
     logo = l;
+    itemsToShow = crops.slice(0, 26)
     requestAnimationFrame(updateGrid);
 };
 

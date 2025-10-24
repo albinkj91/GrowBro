@@ -1,3 +1,3 @@
 # GrowBro
 
-<a href="https://albinkjellson.se" target="_blank">Progress</a>
+[Progress](https://albinkjellson.se)

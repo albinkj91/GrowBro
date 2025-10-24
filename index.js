@@ -28,6 +28,7 @@ let logo;
 const grid = [];
 let itemsToShow;
 let menuIndex;
+let selectedMenuIndex = 0;
 
 const cropNames = [
     "Russet potatoes",
@@ -104,6 +105,7 @@ class Crop{
         this.name = name;
         this.images = images;
         this.growthStage = 0;
+        this.selected = false;
     }
 }
 
@@ -139,8 +141,8 @@ const gridToScreen = (point) =>{
 };
 
 const screenToMenuIndex = (point, items) =>{
-    let index = Math.floor((point.x - calcMenuOffsetX(items) - 18)/64);
-    if(point.y >= menuOffsetY && point.y <= menuOffsetY + 90 && index >= 0)
+    let index = Math.floor((point.x - calcMenuOffsetX(items) - 12)/64);
+    if(point.y >= menuOffsetY && point.y <= menuOffsetY + 90 && index >= 0 && index < items.length)
         return index;
     return -1;
 };
@@ -152,6 +154,7 @@ const update = () =>{
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(logo, 0, 0);
     drawMenu(crops);
+
     if(menuIndex !== -1){
         ctx.strokeStyle = "#80ff80";
         ctx.strokeRect(calcMenuOffsetX(crops) + menuIndex*64 + 11, menuOffsetY + 8, 64, 74);
@@ -164,7 +167,7 @@ const update = () =>{
             if(highlighted !== undefined && highlighted.x === gridCoord.x && highlighted.y === gridCoord.y)
             {
                 drawTile(tiles[4], screenCoord);
-                const crop = crops[9];
+                const crop = itemsToShow[selectedMenuIndex];
                 drawCrop(crop.images[crop.growthStage], screenCoord);
                 const now = performance.now();
                 if(now - startTime > 1000)
@@ -190,6 +193,16 @@ canvas.addEventListener("mousemove", (e) =>{
     else
         highlighted = undefined;
     menuIndex = screenToMenuIndex({x: e.offsetX, y: e.offsetY}, itemsToShow);
+});
+
+canvas.addEventListener("click", (e) =>{
+    const index = screenToMenuIndex({x: e.offsetX, y: e.offsetY}, itemsToShow);
+    if(index !== -1)
+    {
+        itemsToShow[selectedMenuIndex].selected = false;
+        selectedMenuIndex = index;
+        itemsToShow[index].selected = true;
+    }
 });
 
 const loadLogo = async (src) => {
@@ -250,8 +263,12 @@ const drawMenu = (items) =>{
     ctx.strokeRect(menuOffsetX, menuOffsetY, menuWidth, menuHeight);
     ctx.fillRect(menuOffsetX, menuOffsetY, menuWidth, menuHeight);
 
-    ctx.fillStyle = "#bb9090";
     for(let i = 0; i < itemsToShow.length; i++){
+        if(itemsToShow[i].selected)
+            ctx.fillStyle = "#80ff80";
+        else
+            ctx.fillStyle = "#bb9090";
+
         ctx.strokeRect(menuOffsetX + i*64 + 11, menuOffsetY + 8, 64, 74);
         ctx.fillRect(menuOffsetX + i*64 + 11, menuOffsetY + 8, 64, 74);
         drawCrop(itemsToShow[i].images[3], {x: menuOffsetX + i*64 + 42, y: menuOffsetY + 68});
@@ -284,6 +301,7 @@ const start = async () =>{
     transformCropsData(cropImages);
     logo = l;
     itemsToShow = crops.slice(0, 26)
+    itemsToShow[selectedMenuIndex].selected = true;
     requestAnimationFrame(update);
 };
 

@@ -25,6 +25,7 @@ let highlighted;
 let tiles = [];
 let crops = [];
 let logo;
+let tree;
 const grid = [];
 let itemsToShow;
 let menuIndex;
@@ -182,6 +183,7 @@ const update = () =>{
                 drawTile(tiles[1], screenCoord);
         }
     }
+    ctx.drawImage(tree, offsetX+5, offsetY-tileHeight/2 - 3);
     requestAnimationFrame(update);
 };
 
@@ -211,6 +213,15 @@ const loadLogo = async (src) => {
     await image.decode();
 
     const result = await createImageBitmap(image, 0, 21*32, 11*32, 64);
+    return result;
+};
+
+const loadTree = async (src) =>{
+    const image = new Image();
+    image.src = "assets/crops-v2/crops.png";
+    await image.decode();
+
+    const result = await createImageBitmap(image, 11*32, 20*32, 128, 160);
     return result;
 };
 
@@ -291,15 +302,17 @@ const transformCropsData = (cropImages) =>{
 };
 
 const start = async () =>{
-    const [t, c, l] = await Promise.all([
+    const [t, c, l, t2] = await Promise.all([
         loadTiles(),
         loadCrops(),
-        loadLogo()
+        loadLogo(),
+        loadTree()
     ]);
     tiles = Array.from(t);
     const cropImages = Array.from(c);
     transformCropsData(cropImages);
     logo = l;
+    tree = t2;
     itemsToShow = crops.slice(0, 26)
     itemsToShow[selectedMenuIndex].selected = true;
     requestAnimationFrame(update);

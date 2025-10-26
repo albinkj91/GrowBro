@@ -27,10 +27,28 @@ let crops = [];
 let logo;
 let trees = [];
 let rocks = [];
-const grid = [];
 let itemsToShow;
 let menuIndex;
 let selectedMenuIndex = 0;
+
+// 1 = green tree
+// 2 = orange tree
+// 3 = single rock
+// 4 = double rock
+// 5 = tripple rock
+// 6 = water
+const grid = [
+    [0,2,1,1,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0],
+    [0,1,2,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,5,0,0,0],
+    [0,0,4,0,0,0,0,0,0,0],
+    [0,0,0,0,0,4,0,0,0,6],
+    [0,0,0,0,0,0,0,0,6,6],
+    [0,3,0,0,0,6,0,6,6,6],
+    [0,0,0,0,6,6,6,6,6,6],
+    [0,0,0,0,0,6,6,6,6,6]
+];
 
 const cropNames = [
     "Russet potatoes",
@@ -119,15 +137,6 @@ const drawCrop = (image, point) =>{
     ctx.drawImage(image, point.x - halfWidth/2, point.y - 54);
 };
 
-const createGrid = () =>{
-    for(let i = 0; i < gridMaxY; i++){
-        grid[i] = new Array();
-        for(let j = 0; j < gridMaxX; j++){
-            grid[i][j] = 0;
-        }
-    }
-};
-
 const screenToGrid = (point) =>{
     return {
         x: Math.floor(0.5 * ((point.x - (offsetX + halfWidth))/halfWidth + (point.y - (offsetY + halfHeight))/halfHeight) + 0.5),
@@ -166,6 +175,36 @@ const update = () =>{
         for(let j = 0; j < gridMaxX; j++){
             let gridCoord = {x: j, y: i};
             let screenCoord = gridToScreen(gridCoord);
+            switch(grid[i][j]){
+                case 0:
+                    drawTile(tiles[1], screenCoord);
+                    break;
+                case 1:
+                    drawTile(tiles[1], screenCoord);
+                    ctx.drawImage(trees[1], screenCoord.x - halfWidth, screenCoord.y - 115);
+                    break;
+                case 2:
+                    drawTile(tiles[1], screenCoord);
+                    ctx.drawImage(trees[0], screenCoord.x - halfWidth - 7, screenCoord.y - 97);
+                    break;
+                case 3:
+                    drawTile(tiles[1], screenCoord);
+                    ctx.drawImage(rocks[2], screenCoord.x - 14, screenCoord.y - 20);
+                    break;
+                case 4:
+                    drawTile(tiles[1], screenCoord);
+                    ctx.drawImage(rocks[0], screenCoord.x - 14, screenCoord.y - halfHeight - 2);
+                    break;
+                case 5:
+                    drawTile(tiles[1], screenCoord);
+                    ctx.drawImage(rocks[1], screenCoord.x - 16, screenCoord.y - 24);
+                    break;
+                case 6:
+                    drawTile(tiles[3], screenCoord);
+                    break;
+                default:
+                    alert("This shouldn't happen");
+            }
             if(highlighted !== undefined && highlighted.x === gridCoord.x && highlighted.y === gridCoord.y)
             {
                 drawTile(tiles[4], screenCoord);
@@ -180,19 +219,8 @@ const update = () =>{
                 if(crop.growthStage > 3)
                     crop.growthStage = 0;
             }
-            else
-                drawTile(tiles[1], screenCoord);
         }
     }
-    ctx.drawImage(trees[0], offsetX + tileWidth/2 - 7, offsetY - tileHeight * 2);
-    ctx.drawImage(trees[1], offsetX - tileWidth/2, offsetY - tileHeight - tileHeight/2 - 3);
-    ctx.drawImage(trees[1], offsetX + tileWidth, offsetY - tileHeight*2 - 3);
-    ctx.drawImage(trees[1], offsetX + tileWidth + tileWidth/2, offsetY - tileHeight - tileHeight/2 - 3);
-    ctx.drawImage(trees[0], offsetX - 7, offsetY-tileHeight/2 - 1);
-    ctx.drawImage(rocks[0], offsetX+18, offsetY + 32*5 - 2);
-    ctx.drawImage(rocks[0], offsetX+18 - 32*2, offsetY + 32*3 - 2);
-    ctx.drawImage(rocks[1], offsetX+16 + 32*3, offsetY + 32*4 + 8);
-    ctx.drawImage(rocks[2], offsetX+16 - 32*6, offsetY + 32*5 - tileHeight - 3);
     requestAnimationFrame(update);
 };
 
@@ -216,7 +244,7 @@ canvas.addEventListener("click", (e) =>{
     }
 });
 
-const loadLogo = async (src) =>{
+const loadLogo = async () =>{
     const image = new Image();
     image.src = "assets/crops-v2/crops.png";
     await image.decode();
@@ -224,7 +252,7 @@ const loadLogo = async (src) =>{
     return await createImageBitmap(image, 0, 21*32, 11*32, 64);
 };
 
-const loadTrees = async (src) =>{
+const loadTrees = async () =>{
     const image = new Image();
     image.src = "assets/crops-v2/crops.png";
     await image.decode();
@@ -235,7 +263,7 @@ const loadTrees = async (src) =>{
     ]);
 };
 
-const loadTiles = async (src) =>{
+const loadTiles = async () =>{
     const image = new Image();
     image.src = "assets/sprite-sheet.png";
     await image.decode();
@@ -249,7 +277,7 @@ const loadTiles = async (src) =>{
     ]);
 };
 
-const loadCrops = async (src) =>{
+const loadCrops = async () =>{
     const image = new Image();
     image.src = "assets/crops-v2/crops.png";
     await image.decode();
@@ -264,7 +292,7 @@ const loadCrops = async (src) =>{
         }));
 };
 
-const loadRocks = async (src) =>{
+const loadRocks = async () =>{
     const image = new Image();
     image.src = "assets/crops-v2/crops.png";
     await image.decode();

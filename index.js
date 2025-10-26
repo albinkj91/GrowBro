@@ -25,8 +25,8 @@ let highlighted;
 let tiles = [];
 let crops = [];
 let logo;
-let tree;
-let rocks;
+let trees = [];
+let rocks = [];
 const grid = [];
 let itemsToShow;
 let menuIndex;
@@ -184,10 +184,15 @@ const update = () =>{
                 drawTile(tiles[1], screenCoord);
         }
     }
-    ctx.drawImage(tree, offsetX+5, offsetY-tileHeight/2 - 3);
+    ctx.drawImage(trees[0], offsetX + tileWidth/2 - 7, offsetY - tileHeight * 2);
+    ctx.drawImage(trees[1], offsetX - tileWidth/2, offsetY - tileHeight - tileHeight/2 - 3);
+    ctx.drawImage(trees[1], offsetX + tileWidth, offsetY - tileHeight*2 - 3);
+    ctx.drawImage(trees[1], offsetX + tileWidth + tileWidth/2, offsetY - tileHeight - tileHeight/2 - 3);
+    ctx.drawImage(trees[0], offsetX - 7, offsetY-tileHeight/2 - 1);
     ctx.drawImage(rocks[0], offsetX+18, offsetY + 32*5 - 2);
     ctx.drawImage(rocks[0], offsetX+18 - 32*2, offsetY + 32*3 - 2);
     ctx.drawImage(rocks[1], offsetX+16 + 32*3, offsetY + 32*4 + 8);
+    ctx.drawImage(rocks[2], offsetX+16 - 32*6, offsetY + 32*5 - tileHeight - 3);
     requestAnimationFrame(update);
 };
 
@@ -216,17 +221,18 @@ const loadLogo = async (src) =>{
     image.src = "assets/crops-v2/crops.png";
     await image.decode();
 
-    const result = await createImageBitmap(image, 0, 21*32, 11*32, 64);
-    return result;
+    return await createImageBitmap(image, 0, 21*32, 11*32, 64);
 };
 
-const loadTree = async (src) =>{
+const loadTrees = async (src) =>{
     const image = new Image();
     image.src = "assets/crops-v2/crops.png";
     await image.decode();
 
-    const result = await createImageBitmap(image, 11*32, 20*32, 128, 160);
-    return result;
+    return await Promise.all([
+        createImageBitmap(image, 11*32, 20*32+16, 80, 112),
+        createImageBitmap(image, 13*32+16, 20*32, 64, 128)
+    ]);
 };
 
 const loadTiles = async (src) =>{
@@ -234,14 +240,13 @@ const loadTiles = async (src) =>{
     image.src = "assets/sprite-sheet.png";
     await image.decode();
 
-    const result = await Promise.all([
+    return await Promise.all([
         createImageBitmap(image, 0, 12, 64, 128),
         createImageBitmap(image, 64, 88, 64, 128),
         createImageBitmap(image, 128, 8, 64, 128),
         createImageBitmap(image, 192, 88, 64, 128),
         createImageBitmap(image, 256, 88, 64, 128)
     ]);
-    return result;
 };
 
 const loadCrops = async (src) =>{
@@ -249,7 +254,7 @@ const loadCrops = async (src) =>{
     image.src = "assets/crops-v2/crops.png";
     await image.decode();
 
-    const result = await Promise.all(
+    return await Promise.all(
         Array.from({ length: 10 }, async (v, i) =>{
             return await Promise.all(
                 Array.from({ length: 32 }, (v2, j) =>{
@@ -257,7 +262,6 @@ const loadCrops = async (src) =>{
                 })
             )
         }));
-    return result;
 };
 
 const loadRocks = async (src) =>{
@@ -267,7 +271,8 @@ const loadRocks = async (src) =>{
 
     const result = await Promise.all([
         createImageBitmap(image, 0, 23*32, 32, 32),
-        createImageBitmap(image, 32, 23*32, 32, 32)
+        createImageBitmap(image, 32, 23*32, 32, 32),
+        createImageBitmap(image, 64, 23*32, 32, 32)
     ]);
     return result;
 };
@@ -322,7 +327,7 @@ const start = async () =>{
         loadTiles(),
         loadCrops(),
         loadLogo(),
-        loadTree(),
+        loadTrees(),
         loadRocks()
     ]);
     tiles = Array.from(t);
@@ -330,7 +335,7 @@ const start = async () =>{
     const cropImages = Array.from(c);
     transformCropsData(cropImages);
     logo = l;
-    tree = t2;
+    trees = Array.from(t2);
     itemsToShow = crops.slice(0, 26)
     itemsToShow[selectedMenuIndex].selected = true;
     requestAnimationFrame(update);

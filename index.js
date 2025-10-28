@@ -21,12 +21,17 @@ const menuOffsetY = canvas.height - menuHeight - 5;
 ctx.clearRect(0, 0, canvas.width, canvas.height);
 const grassColor = "#208040";
 const hoverColor = "#104020";
+
+const image = new Image();
+image.src = "assets/crops-v2/crops.png";
+
 let highlighted;
 let tiles = [];
 let crops = [];
 let logo;
 let trees = [];
 let rocks = [];
+let sun = {x: -80, y: 0};
 let itemsToShow;
 let menuIndex;
 let selectedMenuIndex = 0;
@@ -40,14 +45,14 @@ let selectedMenuIndex = 0;
 const grid = [
     [0,2,1,1,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0],
-    [0,1,2,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,5,0,0,0],
-    [0,0,4,0,0,0,0,0,0,0],
+    [0,1,2,0,0,0,1,0,2,0],
+    [0,0,0,0,5,0,5,0,0,0],
+    [0,0,4,0,0,0,0,2,0,0],
     [0,0,0,0,0,4,0,0,0,6],
-    [0,0,0,0,0,0,0,0,6,6],
-    [0,3,0,0,0,6,0,6,6,6],
+    [0,0,0,1,0,0,2,0,6,6],
+    [0,3,0,0,0,6,4,6,6,6],
     [0,0,0,0,6,6,6,6,6,6],
-    [0,0,0,0,0,6,6,6,6,6]
+    [0,0,0,0,3,6,6,6,6,6]
 ];
 
 const cropNames = [
@@ -158,11 +163,29 @@ const screenToMenuIndex = (point, items) =>{
     return -1;
 };
 
+const tickSun = () =>{
+    sun.x = (sun.x + 1.0) % (canvas.width + 80);
+    sun.y = 0.0005 * ((sun.x-canvas.width/2)*(sun.x-canvas.width/2)) + 100;
+};
+
+const drawSun = () =>{
+    const gradient = ctx.createRadialGradient(sun.x, sun.y, 50, sun.x, sun.y, 80);
+    gradient.addColorStop(0, "#ffcc30");
+    gradient.addColorStop(0.8, "#ffee30");
+    gradient.addColorStop(1, "white");
+
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(sun.x, sun.y, 80, 0, Math.PI * 2);
+    ctx.fill();
+};
 
 let startTime = performance.now();
 
 const update = () =>{
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    tickSun();
+    drawSun();
     ctx.drawImage(logo, 0, 0);
     drawMenu(crops);
 
@@ -245,18 +268,10 @@ canvas.addEventListener("click", (e) =>{
 });
 
 const loadLogo = async () =>{
-    const image = new Image();
-    image.src = "assets/crops-v2/crops.png";
-    await image.decode();
-
     return await createImageBitmap(image, 0, 21*32, 11*32, 64);
 };
 
 const loadTrees = async () =>{
-    const image = new Image();
-    image.src = "assets/crops-v2/crops.png";
-    await image.decode();
-
     return await Promise.all([
         createImageBitmap(image, 11*32, 20*32+16, 80, 112),
         createImageBitmap(image, 13*32+16, 20*32, 64, 128)
@@ -278,10 +293,6 @@ const loadTiles = async () =>{
 };
 
 const loadCrops = async () =>{
-    const image = new Image();
-    image.src = "assets/crops-v2/crops.png";
-    await image.decode();
-
     return await Promise.all(
         Array.from({ length: 10 }, async (v, i) =>{
             return await Promise.all(
@@ -302,8 +313,7 @@ const loadRocks = async () =>{
         createImageBitmap(image, 32, 23*32, 32, 32),
         createImageBitmap(image, 64, 23*32, 32, 32)
     ]);
-    return result;
-};
+    return result};
 
 const calcMenuWidth = (items) =>{
     return itemsToShow.length * menuItemWidth + menuItemSpacing;
@@ -351,19 +361,20 @@ const transformCropsData = (cropImages) =>{
 };
 
 const start = async () =>{
+    await image.decode();
     const [t, c, l, t2, r] = await Promise.all([
         loadTiles(),
         loadCrops(),
         loadLogo(),
         loadTrees(),
-        loadRocks()
+        loadRocks(),
     ]);
     tiles = Array.from(t);
     rocks = Array.from(r);
     const cropImages = Array.from(c);
     transformCropsData(cropImages);
-    logo = l;
     trees = Array.from(t2);
+    logo = l;
     itemsToShow = crops.slice(0, 26)
     itemsToShow[selectedMenuIndex].selected = true;
     requestAnimationFrame(update);

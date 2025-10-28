@@ -1,4 +1,5 @@
 const canvas = document.querySelector("#canvas");
+const game = document.querySelector("#game");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight - 25;
 const ctx = canvas.getContext('2d');
@@ -21,6 +22,9 @@ const menuOffsetY = canvas.height - menuHeight - 5;
 ctx.clearRect(0, 0, canvas.width, canvas.height);
 const grassColor = "#208040";
 const hoverColor = "#104020";
+const backgroundRed = 0xff;
+const backgroundGreen = 0xee;
+const backgroundBlue = 0xaa;
 
 const image = new Image();
 image.src = "assets/crops-v2/crops.png";
@@ -31,7 +35,7 @@ let crops = [];
 let logo;
 let trees = [];
 let rocks = [];
-let sun = {x: -80, y: 0};
+let sun = {x: 0, y: 0};
 let itemsToShow;
 let menuIndex;
 let selectedMenuIndex = 0;
@@ -164,8 +168,12 @@ const screenToMenuIndex = (point, items) =>{
 };
 
 const tickSun = () =>{
-    sun.x = (sun.x + 0.1) % (canvas.width + 80);
+    sun.x = ((sun.x + 0.5) % canvas.width);
     sun.y = 0.0005 * ((sun.x-canvas.width/2)*(sun.x-canvas.width/2)) + 100;
+    const red = (1.5 - (sun.y/350)) * backgroundRed;
+    const green = (1.5 - (sun.y/350)) * backgroundGreen;
+    const blue = (1.55 - (sun.y/400)) * backgroundBlue;
+    game.style.backgroundColor = "rgba(" + [red, green, blue, 1].join(",") + ")";
 };
 
 const drawSun = () =>{

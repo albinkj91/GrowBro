@@ -164,7 +164,7 @@ const screenToMenuIndex = (point, items) =>{
 };
 
 const tickSun = () =>{
-    sun.x = (sun.x + 1.0) % (canvas.width + 80);
+    sun.x = (sun.x + 0.1) % (canvas.width + 80);
     sun.y = 0.0005 * ((sun.x-canvas.width/2)*(sun.x-canvas.width/2)) + 100;
 };
 

@@ -135,6 +135,7 @@ class Crop{
         this.images = images;
         this.growthStage = 0;
         this.selected = false;
+        this.gridPos = {x: -1, y: -1};
     }
 }
 
@@ -143,7 +144,7 @@ const drawTile = (image, point) =>{
 };
 
 const drawCrop = (image, point) =>{
-    ctx.drawImage(image, point.x - halfWidth/2, point.y - 54);
+    ctx.drawImage(image, point.x - halfWidth/2, point.y - 58);
 };
 
 const screenToGrid = (point) =>{
@@ -167,13 +168,31 @@ const screenToMenuIndex = (point, items) =>{
     return -1;
 };
 
+const isWithinGrid = (point) =>{
+    return point.x >= 0 && point.x < gridMaxX && point.y >= 0 && point.y < gridMaxY;
+};
+
 const tickSun = () =>{
-    sun.x = ((sun.x + 0.5) % canvas.width);
+    sun.x += 1.0;
     sun.y = 0.0005 * ((sun.x-canvas.width/2)*(sun.x-canvas.width/2)) + 100;
     const red = (1.5 - (sun.y/350)) * backgroundRed;
     const green = (1.5 - (sun.y/350)) * backgroundGreen;
     const blue = (1.55 - (sun.y/400)) * backgroundBlue;
     game.style.backgroundColor = "rgba(" + [red, green, blue, 1].join(",") + ")";
+
+    if(sun.x >= canvas.width + 80){
+        sun.x = -80;
+        tickCrops();
+    }
+};
+
+const tickCrops = () =>{
+    for(let i = 0; i < grid.length; i++){
+        for(let j = 0; j < grid[i].length; j++){
+            if(typeof(grid[i][j]) == 'object' && grid[i][j].growthStage < 3)
+                grid[i][j].growthStage++;
+        }
+    }
 };
 
 const drawSun = () =>{
@@ -234,21 +253,15 @@ const update = () =>{
                     drawTile(tiles[3], screenCoord);
                     break;
                 default:
-                    alert("This shouldn't happen");
+                    drawTile(tiles[4], screenCoord);
+                    const crop = grid[i][j];
+                    drawCrop(crop.images[crop.growthStage], screenCoord);
             }
             if(highlighted !== undefined && highlighted.x === gridCoord.x && highlighted.y === gridCoord.y)
             {
                 drawTile(tiles[4], screenCoord);
                 const crop = itemsToShow[selectedMenuIndex];
-                drawCrop(crop.images[crop.growthStage], screenCoord);
-                const now = performance.now();
-                if(now - startTime > 1000)
-                {
-                    crop.growthStage++;
-                    startTime = now;
-                }
-                if(crop.growthStage > 3)
-                    crop.growthStage = 0;
+                drawCrop(crop.images[0], screenCoord);
             }
         }
     }
@@ -257,7 +270,7 @@ const update = () =>{
 
 canvas.addEventListener("mousemove", (e) =>{
     const point = screenToGrid({x: e.offsetX, y: e.offsetY});
-    if(point.x >= 0 && point.x < gridMaxX && point.y >= 0 && point.y < gridMaxY){
+    if(isWithinGrid(point)){
         highlighted = point;
     }
     else
@@ -266,12 +279,13 @@ canvas.addEventListener("mousemove", (e) =>{
 });
 
 canvas.addEventListener("click", (e) =>{
-    const index = screenToMenuIndex({x: e.offsetX, y: e.offsetY}, itemsToShow);
-    if(index !== -1)
-    {
+    const point = screenToGrid({x: e.offsetX, y: e.offsetY});
+    if(menuIndex !== -1){
         itemsToShow[selectedMenuIndex].selected = false;
-        selectedMenuIndex = index;
-        itemsToShow[index].selected = true;
+        selectedMenuIndex = menuIndex;
+        itemsToShow[menuIndex].selected = true;
+    }else if(isWithinGrid(point)){
+        grid[point.y][point.x] = crops[selectedMenuIndex];
     }
 });
 

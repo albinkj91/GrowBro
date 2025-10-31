@@ -20,8 +20,6 @@ const menuItemSpacing = 20;
 const menuOffsetY = canvas.height - menuHeight - 5;
 
 ctx.clearRect(0, 0, canvas.width, canvas.height);
-const grassColor = "#208040";
-const hoverColor = "#104020";
 const backgroundRed = 0xff;
 const backgroundGreen = 0xee;
 const backgroundBlue = 0xaa;
@@ -130,12 +128,11 @@ const cropNames = [
 ];
 
 class Crop{
-    constructor(name, images){
+    constructor(name, images, growthStage = 0, selected = false){
         this.name = name;
         this.images = images;
         this.growthStage = 0;
         this.selected = false;
-        this.gridPos = {x: -1, y: -1};
     }
 }
 
@@ -270,9 +267,8 @@ const update = () =>{
 
 canvas.addEventListener("mousemove", (e) =>{
     const point = screenToGrid({x: e.offsetX, y: e.offsetY});
-    if(isWithinGrid(point)){
+    if(isWithinGrid(point))
         highlighted = point;
-    }
     else
         highlighted = undefined;
     menuIndex = screenToMenuIndex({x: e.offsetX, y: e.offsetY}, itemsToShow);
@@ -285,7 +281,8 @@ canvas.addEventListener("click", (e) =>{
         selectedMenuIndex = menuIndex;
         itemsToShow[menuIndex].selected = true;
     }else if(isWithinGrid(point)){
-        grid[point.y][point.x] = crops[selectedMenuIndex];
+        const tmp = crops[selectedMenuIndex];
+        grid[point.y][point.x] = new Crop(tmp.name, tmp.images);
     }
 });
 

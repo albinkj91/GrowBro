@@ -1,7 +1,8 @@
 const canvas = document.querySelector("#canvas");
+const credit = document.querySelector("#credit");
 const game = document.querySelector("#game");
 canvas.width = window.innerWidth;
-canvas.height = window.innerHeight - 25;
+canvas.height = window.innerHeight - credit.offsetHeight;
 const ctx = canvas.getContext('2d');
 
 const tileWidth = 64;
@@ -10,8 +11,8 @@ const cropWidth = 32;
 const cropHeight = 64;
 const halfWidth = tileWidth / 2;
 const halfHeight = tileHeight / 2;
-const gridMaxX = 10;
-const gridMaxY = 10;
+const gridMaxX = 3;
+const gridMaxY = 3;
 const offsetX = canvas.width / 2 - halfWidth;
 const offsetY = canvas.height / 2 - (gridMaxY * tileHeight)/2;
 const menuHeight = 90;
@@ -33,10 +34,11 @@ let crops = [];
 let logo;
 let trees = [];
 let rocks = [];
-let sun = {x: 0, y: 0};
+let sun = {x: canvas.width/2, y: 0};
 let itemsToShow;
 let menuIndex;
 let selectedMenuIndex = 0;
+let money = 200;
 
 // 1 = green tree
 // 2 = orange tree
@@ -45,16 +47,9 @@ let selectedMenuIndex = 0;
 // 5 = tripple rock
 // 6 = water
 const grid = [
-    [0,2,1,1,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,1,2,0,0,0,1,0,2,0],
-    [0,0,0,0,5,0,5,0,0,0],
-    [0,0,4,0,0,0,0,2,0,0],
-    [0,0,0,0,0,4,0,0,0,6],
-    [0,0,0,1,0,0,2,0,6,6],
-    [0,3,0,0,0,6,4,6,6,6],
-    [0,0,0,0,6,6,6,6,6,6],
-    [0,0,0,0,3,6,6,6,6,6]
+    [0,0,0],
+    [0,0,0],
+    [0,0,0]
 ];
 
 const cropNames = [
@@ -128,9 +123,10 @@ const cropNames = [
 ];
 
 class Crop{
-    constructor(name, images, growthStage = 0, selected = false){
+    constructor(name, images, cost, growthStage = 0, selected = false){
         this.name = name;
         this.images = images;
+        this.cost = cost;
         this.growthStage = 0;
         this.selected = false;
     }
@@ -170,15 +166,15 @@ const isWithinGrid = (point) =>{
 };
 
 const tickSun = () =>{
-    sun.x += 1.0;
+    sun.x += 0.5;
     sun.y = 0.0005 * ((sun.x-canvas.width/2)*(sun.x-canvas.width/2)) + 100;
     const red = (1.5 - (sun.y/350)) * backgroundRed;
     const green = (1.5 - (sun.y/350)) * backgroundGreen;
     const blue = (1.55 - (sun.y/400)) * backgroundBlue;
     game.style.backgroundColor = "rgba(" + [red, green, blue, 1].join(",") + ")";
 
-    if(sun.x >= canvas.width + 80){
-        sun.x = -80;
+    if(sun.x >= canvas.width + 160){
+        sun.x = -160;
         tickCrops();
     }
 };
@@ -212,6 +208,7 @@ const update = () =>{
     drawSun();
     ctx.drawImage(logo, 0, 0);
     drawMenu(crops);
+    drawHud();
 
     if(menuIndex !== -1){
         ctx.strokeStyle = "#80ff80";
@@ -282,7 +279,7 @@ canvas.addEventListener("click", (e) =>{
         itemsToShow[menuIndex].selected = true;
     }else if(isWithinGrid(point)){
         const tmp = crops[selectedMenuIndex];
-        grid[point.y][point.x] = new Crop(tmp.name, tmp.images);
+        grid[point.y][point.x] = new Crop(tmp.name, tmp.images, tmp.cost);
     }
 });
 
@@ -342,8 +339,25 @@ const calcMenuOffsetX = (items) =>{
     return canvas.width / 2 - calcMenuWidth(items) / 2;
 };
 
+const drawMenuItem = (item, x, y) =>{
+        if(item.selected)
+            ctx.fillStyle = "#80ff80";
+        else
+            ctx.fillStyle = "#bb9090";
+
+        ctx.strokeRect(x + 11, y + 8, 64, 74);
+        ctx.fillRect(x + 11, menuOffsetY + 8, 64, 74);
+        drawCrop(item.images[3], {x: x + 42, y: menuOffsetY + 68});
+        if(item.selected)
+            ctx.fillStyle = "#000000";
+        else
+            ctx.fillStyle = "#ffffff";
+        ctx.font = "24px Silkscreen";
+        displayCost = `${item.cost}`;
+        ctx.fillText(displayCost, x + 34 - (displayCost.length-1)*9, y + 30);
+};
+
 const drawMenu = (items) =>{
-    const itemsToShow = items.slice(0, 26);
     const menuWidth = calcMenuWidth(items);
     const menuOffsetX = calcMenuOffsetX(items);
     ctx.lineWidth = 4;
@@ -353,15 +367,26 @@ const drawMenu = (items) =>{
     ctx.fillRect(menuOffsetX, menuOffsetY, menuWidth, menuHeight);
 
     for(let i = 0; i < itemsToShow.length; i++){
-        if(itemsToShow[i].selected)
-            ctx.fillStyle = "#80ff80";
-        else
-            ctx.fillStyle = "#bb9090";
-
-        ctx.strokeRect(menuOffsetX + i*64 + 11, menuOffsetY + 8, 64, 74);
-        ctx.fillRect(menuOffsetX + i*64 + 11, menuOffsetY + 8, 64, 74);
-        drawCrop(itemsToShow[i].images[3], {x: menuOffsetX + i*64 + 42, y: menuOffsetY + 68});
+        drawMenuItem(itemsToShow[i], menuOffsetX + i*64, menuOffsetY);
     }
+};
+
+const drawHud = () =>{
+    const moneyString = `💰${money}`;
+    const width = moneyString.length * 20;
+    const height = 50;
+    const hudOffsetX = (canvas.width / 1.3) - (width / 2);
+    const hudOffsetY = 0;
+    ctx.fillStyle = "#906060";
+    ctx.strokeStyle = "#402020";
+    ctx.strokeRect(hudOffsetX, hudOffsetY, width, height);
+    ctx.fillRect(hudOffsetX, hudOffsetY, width, height);
+    ctx.fillStyle = "#bb9090";
+    //ctx.strokeRect(hudOffsetX + 2, hudOffsetY + 2, width - 4, height - 4);
+    //ctx.fillRect(hudOffsetX + 2, hudOffsetY + 2, width - 4, height - 4);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "24px Silkscreen";
+    ctx.fillText(moneyString, hudOffsetX + width - moneyString.length * 19, height/2 + 9);
 };
 
 const transformCropsData = (cropImages) =>{
@@ -374,12 +399,12 @@ const transformCropsData = (cropImages) =>{
                 cropImages[i+2][j],
                 cropImages[i+3][j],
                 cropImages[i+4][j]
-            ]));
+            ], i * cropImages.length + j*j * 10 + 10));
         }
     }
 };
 
-const start = async () =>{
+const load = async () =>{
     await image.decode();
     const [t, c, l, t2, r] = await Promise.all([
         loadTiles(),
@@ -396,7 +421,11 @@ const start = async () =>{
     logo = l;
     itemsToShow = crops.slice(0, 26)
     itemsToShow[selectedMenuIndex].selected = true;
+};
+
+const main = async () =>{
+    await load();
     requestAnimationFrame(update);
 };
 
-start();
+main();

@@ -9,18 +9,20 @@ const tileWidth = 64;
 const tileHeight = 32;
 const cropWidth = 32;
 const cropHeight = 64;
-const halfWidth = tileWidth / 2;
-const halfHeight = tileHeight / 2;
+const halfWidth = Math.floor(tileWidth / 2);
+const halfHeight = Math.floor(tileHeight / 2);
 const gridMaxX = 3;
 const gridMaxY = 3;
-const offsetX = canvas.width / 2 - halfWidth;
-const offsetY = canvas.height / 2 - (gridMaxY * tileHeight)/2;
-const menuHeight = 90;
-const menuItemWidth = 64;
-const menuItemSpacing = 20;
-const menuOffsetY = canvas.height - menuHeight - 5;
+const offsetX = Math.floor(canvas.width / 2) - halfWidth;
+const offsetY = Math.floor(canvas.height / 2) - Math.floor((gridMaxY * tileHeight)/2);
+const menuColumnWidth = 120;
+const menuItemSpacing = 90;
+const menuItemHeight = Math.floor(canvas.height / menuItemSpacing);
+let menuWidth = 0;
+let menuHeight = 0;
+let menuOffsetWidth = 0;
+let menuOffsetHeight = 0;
 
-ctx.clearRect(0, 0, canvas.width, canvas.height);
 const backgroundRed = 0xff;
 const backgroundGreen = 0xee;
 const backgroundBlue = 0xaa;
@@ -34,7 +36,7 @@ let crops = [];
 let logo;
 let trees = [];
 let rocks = [];
-let sun = {x: canvas.width/2, y: 0};
+let sun = {x: Math.floor(canvas.width/2), y: 0};
 let itemsToShow;
 let menuIndex;
 let selectedMenuIndex = 0;
@@ -137,7 +139,7 @@ const drawTile = (image, point) =>{
 };
 
 const drawCrop = (image, point) =>{
-    ctx.drawImage(image, point.x - halfWidth/2, point.y - 58);
+    ctx.drawImage(image, point.x - Math.floor(halfWidth/2), point.y - 58);
 };
 
 const screenToGrid = (point) =>{
@@ -167,7 +169,7 @@ const isWithinGrid = (point) =>{
 
 const tickSun = () =>{
     sun.x += 0.5;
-    sun.y = 0.0005 * ((sun.x-canvas.width/2)*(sun.x-canvas.width/2)) + 100;
+    sun.y = 0.0005 * ((sun.x-Math.floor(canvas.width/2))*(sun.x-Math.floor(canvas.width/2))) + 100;
     const red = (1.5 - (sun.y/350)) * backgroundRed;
     const green = (1.5 - (sun.y/350)) * backgroundGreen;
     const blue = (1.55 - (sun.y/400)) * backgroundBlue;
@@ -207,12 +209,12 @@ const update = () =>{
     tickSun();
     drawSun();
     ctx.drawImage(logo, 0, 0);
-    drawMenu(crops);
+    drawMenu(itemsToShow);
     drawHud();
 
     if(menuIndex !== -1){
         ctx.strokeStyle = "#80ff80";
-        ctx.strokeRect(calcMenuOffsetX(crops) + menuIndex*64 + 11, menuOffsetY + 8, 64, 74);
+        ctx.strokeRect(menuOffsetX + menuIndex*64 + 11, menuOffsetY + 8, 64, 74);
     }
 
     for(let i = 0; i < gridMaxY; i++){
@@ -331,12 +333,27 @@ const loadRocks = async () =>{
     ]);
     return result};
 
+const calcMenuColumns = (items) =>{
+    return Math.floor(items.length / Math.floor(canvas.height / menuItemSpacing)) + 1;
+};
+
 const calcMenuWidth = (items) =>{
-    return itemsToShow.length * menuItemWidth + menuItemSpacing;
+    return (menuColumnWidth + 6) * (Math.floor(items.length / Math.floor(canvas.height / menuItemSpacing)) + 1);
+};
+
+const calcMenuHeight = (items) =>{
+    let menuHeight = menuItemSpacing * Math.floor(items.length / calcMenuColumns(items));
+    if(items.length % calcMenuColumns(items) !== 0)
+        menuHeight++;
+    return menuHeight;
 };
 
 const calcMenuOffsetX = (items) =>{
-    return canvas.width / 2 - calcMenuWidth(items) / 2;
+    return canvas.width - calcMenuWidth(items) - 20;
+};
+
+const calcMenuOffsetY = (items) =>{
+    return Math.floor(canvas.height / 2) - Math.floor(menuHeight / 2);
 };
 
 const drawMenuItem = (item, x, y) =>{
@@ -345,9 +362,9 @@ const drawMenuItem = (item, x, y) =>{
         else
             ctx.fillStyle = "#bb9090";
 
-        ctx.strokeRect(x + 11, y + 8, 64, 74);
-        ctx.fillRect(x + 11, menuOffsetY + 8, 64, 74);
-        drawCrop(item.images[3], {x: x + 42, y: menuOffsetY + 68});
+        ctx.strokeRect(x + 9, y + 8, menuColumnWidth-6, 74);
+        ctx.fillRect(x + 11, menuOffsetX + 8, menuColumnWidth, 74);
+        drawCrop(item.images[3], {x: x + Math.floor(menuItemSpacing / 2), y: y + Math.floor(menuItemSpacing / 2) + 25});
         if(item.selected)
             ctx.fillStyle = "#000000";
         else
@@ -358,16 +375,19 @@ const drawMenuItem = (item, x, y) =>{
 };
 
 const drawMenu = (items) =>{
-    const menuWidth = calcMenuWidth(items);
-    const menuOffsetX = calcMenuOffsetX(items);
+    const columns = calcMenuColumns(items);
+    const menuOffsetY = calcMenuOffsetY(items);
     ctx.lineWidth = 4;
     ctx.fillStyle = "#906060";
     ctx.strokeStyle = "#402020";
     ctx.strokeRect(menuOffsetX, menuOffsetY, menuWidth, menuHeight);
     ctx.fillRect(menuOffsetX, menuOffsetY, menuWidth, menuHeight);
 
-    for(let i = 0; i < itemsToShow.length; i++){
-        drawMenuItem(itemsToShow[i], menuOffsetX + i*64, menuOffsetY);
+    const rows = Math.floor(itemsToShow.length/columns);
+    for(let i = 0; i < columns; i++){
+        for(let j = 0; j < rows; j++){
+            drawMenuItem(itemsToShow[i*rows + j], menuOffsetX + (i*menuColumnWidth), menuOffsetY + j*menuItemSpacing);
+        }
     }
 };
 
@@ -375,24 +395,23 @@ const drawHud = () =>{
     const moneyString = `💰${money}`;
     const width = moneyString.length * 20;
     const height = 50;
-    const hudOffsetX = (canvas.width / 1.3) - (width / 2);
+    const hudOffsetX = (canvas.width / 1.3) - Math.floor(width / 2);
     const hudOffsetY = 0;
     ctx.fillStyle = "#906060";
     ctx.strokeStyle = "#402020";
     ctx.strokeRect(hudOffsetX, hudOffsetY, width, height);
     ctx.fillRect(hudOffsetX, hudOffsetY, width, height);
+
     ctx.fillStyle = "#bb9090";
-    //ctx.strokeRect(hudOffsetX + 2, hudOffsetY + 2, width - 4, height - 4);
-    //ctx.fillRect(hudOffsetX + 2, hudOffsetY + 2, width - 4, height - 4);
     ctx.fillStyle = "#ffffff";
     ctx.font = "24px Silkscreen";
-    ctx.fillText(moneyString, hudOffsetX + width - moneyString.length * 19, height/2 + 9);
+    ctx.fillText(moneyString, hudOffsetX + width - moneyString.length * 19, Math.floor(height/2) + 9);
 };
 
 const transformCropsData = (cropImages) =>{
     for(let i = 0; i < cropImages.length; i += 5){
         for(let j = 0; j < cropImages[i].length; j++){
-            crops.push(new Crop(cropNames[i*32/5 + j],
+            crops.push(new Crop(cropNames[i*Math.floor(32/5) + j],
             [
                 cropImages[i][j],
                 cropImages[i+1][j],
@@ -419,12 +438,16 @@ const load = async () =>{
     transformCropsData(cropImages);
     trees = Array.from(t2);
     logo = l;
-    itemsToShow = crops.slice(0, 26)
+    itemsToShow = crops.slice(0, 12)
     itemsToShow[selectedMenuIndex].selected = true;
 };
 
 const main = async () =>{
     await load();
+    menuOffsetX = calcMenuOffsetX(itemsToShow);
+    menuOffsetY = calcMenuOffsetY(itemsToShow);
+    menuWidth = calcMenuWidth(itemsToShow);
+    menuHeight = calcMenuHeight(itemsToShow);
     requestAnimationFrame(update);
 };
 

@@ -5,6 +5,7 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight - credit.offsetHeight;
 const ctx = canvas.getContext('2d');
 
+// *********** Grid params **************
 const tileWidth = 64;
 const tileHeight = 32;
 const cropWidth = 32;
@@ -15,13 +16,19 @@ const gridMaxX = 3;
 const gridMaxY = 3;
 const offsetX = Math.floor(canvas.width / 2) - halfWidth;
 const offsetY = Math.floor(canvas.height / 2) - Math.floor((gridMaxY * tileHeight)/2);
-const menuColumnWidth = 120;
-const menuItemSpacing = 90;
-const menuItemHeight = Math.floor(canvas.height / menuItemSpacing);
-let menuWidth = 0;
-let menuHeight = 0;
-let menuOffsetWidth = 0;
-let menuOffsetHeight = 0;
+
+// *********** Item menu params **************
+const margin = 5;
+const itemWidth = 80;
+const itemHeight = 80;
+const horizontalSpacing = itemWidth + margin;
+const verticalSpacing = itemHeight + margin;
+let menuWidth;
+let menuHeight;
+let menuOffsetX;
+let menuOffsetY;
+
+// ************ background params ***********
 
 const backgroundRed = 0xff;
 const backgroundGreen = 0xee;
@@ -157,10 +164,7 @@ const gridToScreen = (point) =>{
 };
 
 const screenToMenuIndex = (point, items) =>{
-    let index = Math.floor((point.x - calcMenuOffsetX(items) - 12)/64);
-    if(point.y >= menuOffsetY && point.y <= menuOffsetY + 90 && index >= 0 && index < items.length)
-        return index;
-    return -1;
+
 };
 
 const isWithinGrid = (point) =>{
@@ -212,10 +216,10 @@ const update = () =>{
     drawMenu(itemsToShow);
     drawHud();
 
-    if(menuIndex !== -1){
-        ctx.strokeStyle = "#80ff80";
-        ctx.strokeRect(menuOffsetX + menuIndex*64 + 11, menuOffsetY + 8, 64, 74);
-    }
+    //if(menuIndex !== -1){
+    //    ctx.strokeStyle = "#80ff80";
+    //    ctx.strokeRect(menuOffsetX + menuIndex*64 + 11, menuOffsetY + 8, 64, 74);
+    //}
 
     for(let i = 0; i < gridMaxY; i++){
         for(let j = 0; j < gridMaxX; j++){
@@ -270,16 +274,16 @@ canvas.addEventListener("mousemove", (e) =>{
         highlighted = point;
     else
         highlighted = undefined;
-    menuIndex = screenToMenuIndex({x: e.offsetX, y: e.offsetY}, itemsToShow);
+    //menuIndex = screenToMenuIndex({x: e.offsetX, y: e.offsetY}, itemsToShow);
 });
 
 canvas.addEventListener("click", (e) =>{
     const point = screenToGrid({x: e.offsetX, y: e.offsetY});
-    if(menuIndex !== -1){
-        itemsToShow[selectedMenuIndex].selected = false;
-        selectedMenuIndex = menuIndex;
-        itemsToShow[menuIndex].selected = true;
-    }else if(isWithinGrid(point)){
+    //if(menuIndex !== -1){
+    //    itemsToShow[selectedMenuIndex].selected = false;
+    //    selectedMenuIndex = menuIndex;
+    //    itemsToShow[menuIndex].selected = true;
+    /*}else */if(isWithinGrid(point)){
         const tmp = crops[selectedMenuIndex];
         grid[point.y][point.x] = new Crop(tmp.name, tmp.images, tmp.cost);
     }
@@ -333,60 +337,52 @@ const loadRocks = async () =>{
     ]);
     return result};
 
-const calcMenuColumns = (items) =>{
-    return Math.floor(items.length / Math.floor(canvas.height / menuItemSpacing)) + 1;
-};
-
-const calcMenuWidth = (items) =>{
-    return (menuColumnWidth + 6) * (Math.floor(items.length / Math.floor(canvas.height / menuItemSpacing)) + 1);
-};
-
-const calcMenuHeight = (items) =>{
-    let menuHeight = menuItemSpacing * Math.floor(items.length / calcMenuColumns(items));
-    if(items.length % calcMenuColumns(items) !== 0)
-        menuHeight++;
-    return menuHeight;
-};
-
-const calcMenuOffsetX = (items) =>{
-    return canvas.width - calcMenuWidth(items) - 20;
-};
-
-const calcMenuOffsetY = (items) =>{
-    return Math.floor(canvas.height / 2) - Math.floor(menuHeight / 2);
-};
-
 const drawMenuItem = (item, x, y) =>{
-        if(item.selected)
-            ctx.fillStyle = "#80ff80";
-        else
-            ctx.fillStyle = "#bb9090";
+    if(item.selected)
+        ctx.fillStyle = "#80ff80";
+    else
+        ctx.fillStyle = "#bb9090";
 
-        ctx.strokeRect(x + 9, y + 8, menuColumnWidth-6, 74);
-        ctx.fillRect(x + 11, menuOffsetX + 8, menuColumnWidth, 74);
-        drawCrop(item.images[3], {x: x + Math.floor(menuItemSpacing / 2), y: y + Math.floor(menuItemSpacing / 2) + 25});
-        if(item.selected)
-            ctx.fillStyle = "#000000";
-        else
-            ctx.fillStyle = "#ffffff";
-        ctx.font = "24px Silkscreen";
-        displayCost = `${item.cost}`;
-        ctx.fillText(displayCost, x + 34 - (displayCost.length-1)*9, y + 30);
+    ctx.fillRect(x, y, itemWidth, itemHeight);
+    ctx.strokeRect(x, y, itemWidth, itemHeight);
+
+    const centerX = Math.floor(itemWidth / 2);
+    const centerY = Math.floor(itemHeight / 2);
+    const imageX = x + centerX - Math.floor(item.images[3].width / 2);
+    const imageY = y + centerY + - Math.floor(item.images[3].height / 2);
+    ctx.drawImage(item.images[3], imageX, imageY);
+
+    if(item.selected)
+        ctx.fillStyle = "#000000";
+    else
+        ctx.fillStyle = "#ffffff";
+    ctx.font = "24px Silkscreen";
+    ctx.textAlign = "center";
+    displayCost = `${item.cost}`;
+    ctx.fillText(displayCost, x + centerX, y + centerY - 20);
 };
 
 const drawMenu = (items) =>{
-    const columns = calcMenuColumns(items);
-    const menuOffsetY = calcMenuOffsetY(items);
-    ctx.lineWidth = 4;
+    const rows = Math.floor(canvas.height / itemHeight) - 1;
+    let columns = Math.floor(items.length / rows);
+    columns += items.length % rows > 0 ? 1 : 0;
+    const border = 2;
+    const menuWidth = columns * (itemWidth + margin + border) + margin;
+    const menuHeight = rows * (itemHeight + margin + border) + margin;
+    const menuOffsetX = canvas.width - menuWidth - 10;
+    const menuOffsetY = Math.floor(canvas.height / 2) - Math.floor(menuHeight / 2) + 10;
     ctx.fillStyle = "#906060";
     ctx.strokeStyle = "#402020";
-    ctx.strokeRect(menuOffsetX, menuOffsetY, menuWidth, menuHeight);
-    ctx.fillRect(menuOffsetX, menuOffsetY, menuWidth, menuHeight);
+    ctx.lineWidth = border;
+    ctx.fillRect(menuOffsetX - border, menuOffsetY, menuWidth + border, menuHeight + border);
+    ctx.strokeRect(menuOffsetX - border, menuOffsetY, menuWidth + border, menuHeight + border);
 
-    const rows = Math.floor(itemsToShow.length/columns);
     for(let i = 0; i < columns; i++){
         for(let j = 0; j < rows; j++){
-            drawMenuItem(itemsToShow[i*rows + j], menuOffsetX + (i*menuColumnWidth), menuOffsetY + j*menuItemSpacing);
+            if(i*rows+j > items.length-1) return;
+            drawMenuItem(items[i*rows + j],
+                menuOffsetX + margin + (itemWidth + margin + 2) * i,
+                menuOffsetY + margin + 2 + (itemHeight + margin + 2) * j);
         }
     }
 };
@@ -394,18 +390,20 @@ const drawMenu = (items) =>{
 const drawHud = () =>{
     const moneyString = `💰${money}`;
     const width = moneyString.length * 20;
-    const height = 50;
+    const height = 40;
     const hudOffsetX = (canvas.width / 1.3) - Math.floor(width / 2);
-    const hudOffsetY = 0;
+    const hudOffsetY = 1;
     ctx.fillStyle = "#906060";
     ctx.strokeStyle = "#402020";
-    ctx.strokeRect(hudOffsetX, hudOffsetY, width, height);
+    ctx.lineWidth = 2;
     ctx.fillRect(hudOffsetX, hudOffsetY, width, height);
+    ctx.strokeRect(hudOffsetX, hudOffsetY, width, height);
 
     ctx.fillStyle = "#bb9090";
     ctx.fillStyle = "#ffffff";
     ctx.font = "24px Silkscreen";
-    ctx.fillText(moneyString, hudOffsetX + width - moneyString.length * 19, Math.floor(height/2) + 9);
+    ctx.textAlign = "center";
+    ctx.fillText(moneyString, hudOffsetX + Math.floor(width/2), hudOffsetY + Math.floor(height/2) + 6);
 };
 
 const transformCropsData = (cropImages) =>{
@@ -438,16 +436,12 @@ const load = async () =>{
     transformCropsData(cropImages);
     trees = Array.from(t2);
     logo = l;
-    itemsToShow = crops.slice(0, 12)
+    itemsToShow = crops.slice(0, 18)
     itemsToShow[selectedMenuIndex].selected = true;
 };
 
 const main = async () =>{
     await load();
-    menuOffsetX = calcMenuOffsetX(itemsToShow);
-    menuOffsetY = calcMenuOffsetY(itemsToShow);
-    menuWidth = calcMenuWidth(itemsToShow);
-    menuHeight = calcMenuHeight(itemsToShow);
     requestAnimationFrame(update);
 };
 

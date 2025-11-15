@@ -19,6 +19,7 @@ const offsetY = Math.floor(canvas.height / 2) - Math.floor((gridMaxY * tileHeigh
 
 // *********** Item menu params **************
 const margin = 5;
+const border = 2;
 const itemWidth = 80;
 const itemHeight = 80;
 const horizontalSpacing = itemWidth + margin;
@@ -27,6 +28,8 @@ let menuWidth;
 let menuHeight;
 let menuOffsetX;
 let menuOffsetY;
+let rows;
+let columns;
 
 // ************ background params ***********
 
@@ -163,8 +166,14 @@ const gridToScreen = (point) =>{
     };
 };
 
-const screenToMenuIndex = (point, items) =>{
-
+const screenToMenuIndex = (point) =>{
+    if(point.x > menuOffsetX + margin + border && point.x < menuOffsetX + menuWidth && point.y > menuOffsetY + margin + border && point.y < menuOffsetY + menuHeight){
+        const x = Math.floor((point.x - menuOffsetX - margin) / (itemWidth + margin + 2));
+        const y = Math.floor((point.y - menuOffsetY - margin - 2) / (itemHeight + margin + 2));
+        return x * rows + y;
+    }else{
+        return -1;
+    }
 };
 
 const isWithinGrid = (point) =>{
@@ -216,10 +225,12 @@ const update = () =>{
     drawMenu(itemsToShow);
     drawHud();
 
-    //if(menuIndex !== -1){
-    //    ctx.strokeStyle = "#80ff80";
-    //    ctx.strokeRect(menuOffsetX + menuIndex*64 + 11, menuOffsetY + 8, 64, 74);
-    //}
+    if(menuIndex !== -1){
+        ctx.strokeStyle = "#80ff80";
+        const y = menuOffsetY + Math.floor(menuIndex % rows) * (itemHeight + margin + border) + margin + border;
+        const x = menuOffsetX + Math.floor(menuIndex / rows) * (itemWidth + margin + border) + margin;
+        ctx.strokeRect(x, y, itemWidth, itemHeight);
+    }
 
     for(let i = 0; i < gridMaxY; i++){
         for(let j = 0; j < gridMaxX; j++){
@@ -274,16 +285,16 @@ canvas.addEventListener("mousemove", (e) =>{
         highlighted = point;
     else
         highlighted = undefined;
-    //menuIndex = screenToMenuIndex({x: e.offsetX, y: e.offsetY}, itemsToShow);
+    menuIndex = screenToMenuIndex({x: e.offsetX, y: e.offsetY});
 });
 
 canvas.addEventListener("click", (e) =>{
     const point = screenToGrid({x: e.offsetX, y: e.offsetY});
-    //if(menuIndex !== -1){
-    //    itemsToShow[selectedMenuIndex].selected = false;
-    //    selectedMenuIndex = menuIndex;
-    //    itemsToShow[menuIndex].selected = true;
-    /*}else */if(isWithinGrid(point)){
+    if(menuIndex !== -1){
+        itemsToShow[selectedMenuIndex].selected = false;
+        selectedMenuIndex = menuIndex;
+        itemsToShow[menuIndex].selected = true;
+    }else if(isWithinGrid(point)){
         const tmp = crops[selectedMenuIndex];
         grid[point.y][point.x] = new Crop(tmp.name, tmp.images, tmp.cost);
     }
@@ -335,7 +346,8 @@ const loadRocks = async () =>{
         createImageBitmap(image, 32, 23*32, 32, 32),
         createImageBitmap(image, 64, 23*32, 32, 32)
     ]);
-    return result};
+    return result
+};
 
 const drawMenuItem = (item, x, y) =>{
     if(item.selected)
@@ -363,14 +375,13 @@ const drawMenuItem = (item, x, y) =>{
 };
 
 const drawMenu = (items) =>{
-    const rows = Math.floor(canvas.height / itemHeight) - 1;
-    let columns = Math.floor(items.length / rows);
+    rows = Math.floor(canvas.height / itemHeight) - 1;
+    columns = Math.floor(items.length / rows);
     columns += items.length % rows > 0 ? 1 : 0;
-    const border = 2;
-    const menuWidth = columns * (itemWidth + margin + border) + margin;
-    const menuHeight = rows * (itemHeight + margin + border) + margin;
-    const menuOffsetX = canvas.width - menuWidth - 10;
-    const menuOffsetY = Math.floor(canvas.height / 2) - Math.floor(menuHeight / 2) + 10;
+    menuWidth = columns * (itemWidth + margin + border) + margin;
+    menuHeight = rows * (itemHeight + margin + border) + margin;
+    menuOffsetX = canvas.width - menuWidth - 10;
+    menuOffsetY = Math.floor(canvas.height / 2) - Math.floor(menuHeight / 2) + 10;
     ctx.fillStyle = "#906060";
     ctx.strokeStyle = "#402020";
     ctx.lineWidth = border;
@@ -381,8 +392,8 @@ const drawMenu = (items) =>{
         for(let j = 0; j < rows; j++){
             if(i*rows+j > items.length-1) return;
             drawMenuItem(items[i*rows + j],
-                menuOffsetX + margin + (itemWidth + margin + 2) * i,
-                menuOffsetY + margin + 2 + (itemHeight + margin + 2) * j);
+                menuOffsetX + margin + (itemWidth + margin + border) * i,
+                menuOffsetY + margin + 2 + (itemHeight + margin + border) * j);
         }
     }
 };

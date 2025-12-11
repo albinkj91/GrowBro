@@ -20,8 +20,8 @@ const offsetY = Math.floor(canvas.height / 2) - Math.floor((gridMaxY * tileHeigh
 // *********** Item menu params **************
 const margin = 5;
 const border = 2;
-const itemWidth = 80;
-const itemHeight = 80;
+const itemWidth = 150;
+const itemHeight = 140;
 const horizontalSpacing = itemWidth + margin;
 const verticalSpacing = itemHeight + margin;
 let menuWidth;
@@ -168,8 +168,8 @@ const gridToScreen = (point) =>{
 
 const screenToMenuIndex = (point) =>{
     if(point.x > menuOffsetX + margin + border && point.x < menuOffsetX + menuWidth && point.y > menuOffsetY + margin + border && point.y < menuOffsetY + menuHeight){
-        const x = Math.floor((point.x - menuOffsetX - margin) / (itemWidth + margin + 2));
-        const y = Math.floor((point.y - menuOffsetY - margin - 2) / (itemHeight + margin + 2));
+        const x = Math.floor((point.x - menuOffsetX - margin) / (itemWidth + margin + border));
+        const y = Math.floor((point.y - menuOffsetY - margin - border) / (itemHeight + margin + border));
         return x * rows + y;
     }else{
         return -1;
@@ -370,8 +370,11 @@ const drawMenuItem = (item, x, y) =>{
         ctx.fillStyle = "#ffffff";
     ctx.font = "24px Silkscreen";
     ctx.textAlign = "center";
-    displayCost = `${item.cost}`;
-    ctx.fillText(displayCost, x + centerX, y + centerY - 20);
+    const maxTextWidth = itemWidth - 4;
+    displayCost = `💰${item.cost}`;
+    ctx.fillText(displayCost, x + centerX, y + centerY - 40, maxTextWidth);
+    ctx.font = "14px Silkscreen";
+    ctx.fillText(item.name, x + centerX, y + centerY + 50, maxTextWidth);
 };
 
 const drawMenu = (items) =>{
@@ -420,14 +423,15 @@ const drawHud = () =>{
 const transformCropsData = (cropImages) =>{
     for(let i = 0; i < cropImages.length; i += 5){
         for(let j = 0; j < cropImages[i].length; j++){
-            crops.push(new Crop(cropNames[i*Math.floor(32/5) + j],
+            console.log(i*5 + j);
+            crops.push(new Crop(cropNames[i*5 + j],
             [
                 cropImages[i][j],
                 cropImages[i+1][j],
                 cropImages[i+2][j],
                 cropImages[i+3][j],
                 cropImages[i+4][j]
-            ], i * cropImages.length + j*j * 10 + 10));
+            ], i * cropImages.length + j * j * 10 + 10));
         }
     }
 };
@@ -447,7 +451,8 @@ const load = async () =>{
     transformCropsData(cropImages);
     trees = Array.from(t2);
     logo = l;
-    itemsToShow = crops.slice(0, 18)
+    itemsToShow = crops.slice(0, 15)
+    console.log(crops);
     itemsToShow[selectedMenuIndex].selected = true;
 };
 

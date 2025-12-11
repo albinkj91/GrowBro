@@ -297,7 +297,7 @@ canvas.addEventListener("click", (e) =>{
         itemsToShow[menuIndex].selected = true;
     }else if(isWithinGrid(point)){
         const tmp = crops[selectedMenuIndex];
-        if(money > tmp.cost){
+        if(money >= tmp.cost){
             grid[point.y][point.x] = new Crop(tmp.name, tmp.images, tmp.cost);
             money -= tmp.cost;
         }

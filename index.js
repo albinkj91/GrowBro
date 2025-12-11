@@ -50,7 +50,8 @@ let sun = {x: Math.floor(canvas.width/2), y: 0};
 let itemsToShow;
 let menuIndex;
 let selectedMenuIndex = 0;
-let money = 200;
+let startingMoney = 200;
+let money = startingMoney;
 
 // 1 = green tree
 // 2 = orange tree
@@ -296,7 +297,10 @@ canvas.addEventListener("click", (e) =>{
         itemsToShow[menuIndex].selected = true;
     }else if(isWithinGrid(point)){
         const tmp = crops[selectedMenuIndex];
-        grid[point.y][point.x] = new Crop(tmp.name, tmp.images, tmp.cost);
+        if(money > tmp.cost){
+            grid[point.y][point.x] = new Crop(tmp.name, tmp.images, tmp.cost);
+            money -= tmp.cost;
+        }
     }
 });
 
@@ -423,7 +427,6 @@ const drawHud = () =>{
 const transformCropsData = (cropImages) =>{
     for(let i = 0; i < cropImages.length; i += 5){
         for(let j = 0; j < cropImages[i].length; j++){
-            console.log(i*5 + j);
             crops.push(new Crop(cropNames[i*5 + j],
             [
                 cropImages[i][j],
@@ -452,7 +455,6 @@ const load = async () =>{
     trees = Array.from(t2);
     logo = l;
     itemsToShow = crops.slice(0, 15)
-    console.log(crops);
     itemsToShow[selectedMenuIndex].selected = true;
 };
 

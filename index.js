@@ -12,22 +12,22 @@ const cropWidth = 32;
 const cropHeight = 64;
 const halfWidth = Math.floor(tileWidth / 2);
 const halfHeight = Math.floor(tileHeight / 2);
-const gridMaxX = 3;
-const gridMaxY = 3;
+const gridMaxX = 4;
+const gridMaxY = 4;
 const offsetX = Math.floor(canvas.width / 2) - halfWidth;
 const offsetY = Math.floor(canvas.height / 2) - Math.floor((gridMaxY * tileHeight)/2);
 
-// *********** Item menu params **************
+// *********** Item shop params **************
 const margin = 5;
 const border = 2;
 const itemWidth = 150;
 const itemHeight = 140;
 const horizontalSpacing = itemWidth + margin;
 const verticalSpacing = itemHeight + margin;
-let menuWidth;
-let menuHeight;
-let menuOffsetX;
-let menuOffsetY;
+let shopWidth;
+let shopHeight;
+let shopOffsetX;
+let shopOffsetY;
 let rows;
 let columns;
 
@@ -47,9 +47,10 @@ let logo;
 let trees = [];
 let rocks = [];
 let sun = {x: Math.floor(canvas.width/2), y: 0};
-let itemsToShow;
-let menuIndex;
-let selectedMenuIndex = 0;
+let availableItems;
+let availableItemCount = 2;
+let shopIndex;
+let selectedShopIndex;
 let startingMoney = 200;
 let money = startingMoney;
 
@@ -60,9 +61,10 @@ let money = startingMoney;
 // 5 = tripple rock
 // 6 = water
 const grid = [
-    [0,0,0],
-    [0,0,0],
-    [0,0,0]
+    [1,1,2,5],
+    [2,6,0,0],
+    [6,6,4,0],
+    [6,6,0,0]
 ];
 
 const cropNames = [
@@ -167,14 +169,22 @@ const gridToScreen = (point) =>{
     };
 };
 
-const screenToMenuIndex = (point) =>{
-    if(point.x > menuOffsetX + margin + border && point.x < menuOffsetX + menuWidth && point.y > menuOffsetY + margin + border && point.y < menuOffsetY + menuHeight){
-        const x = Math.floor((point.x - menuOffsetX - margin) / (itemWidth + margin + border));
-        const y = Math.floor((point.y - menuOffsetY - margin - border) / (itemHeight + margin + border));
-        return x * rows + y;
-    }else{
-        return -1;
+const screenToShopIndex = (point) =>{
+    if(isWithinShop(point)){
+        const x = Math.floor((point.x - shopOffsetX - margin) / (itemWidth + margin + border));
+        const y = Math.floor((point.y - shopOffsetY - margin - border) / (itemHeight + margin + border));
+        const index = x * rows + y;
+        if(index < availableItemCount)
+            return index;
     }
+};
+
+
+const isWithinShop = (point) =>{
+    return point.x >= shopOffsetX + margin + border
+        && point.x < shopOffsetX + shopWidth - margin - border
+        && point.y > shopOffsetY + margin + border
+        && point.y <= shopOffsetY + shopHeight - margin - border;
 };
 
 const isWithinGrid = (point) =>{
@@ -223,13 +233,13 @@ const update = () =>{
     tickSun();
     drawSun();
     ctx.drawImage(logo, 0, 0);
-    drawMenu(itemsToShow);
+    drawShop(availableItems);
     drawHud();
 
-    if(menuIndex !== -1){
+    if(shopIndex !== undefined){
         ctx.strokeStyle = "#80ff80";
-        const y = menuOffsetY + Math.floor(menuIndex % rows) * (itemHeight + margin + border) + margin + border;
-        const x = menuOffsetX + Math.floor(menuIndex / rows) * (itemWidth + margin + border) + margin;
+        const y = shopOffsetY + Math.floor(shopIndex % rows) * (itemHeight + margin + border) + margin + border;
+        const x = shopOffsetX + Math.floor(shopIndex / rows) * (itemWidth + margin + border) + margin;
         ctx.strokeRect(x, y, itemWidth, itemHeight);
     }
 
@@ -269,10 +279,12 @@ const update = () =>{
                     const crop = grid[i][j];
                     drawCrop(crop.images[crop.growthStage], screenCoord);
             }
-            if(highlighted !== undefined && highlighted.x === gridCoord.x && highlighted.y === gridCoord.y)
+            if(selectedShopIndex !== undefined
+              && highlighted !== undefined
+              && highlighted.x === gridCoord.x && highlighted.y === gridCoord.y)
             {
                 drawTile(tiles[4], screenCoord);
-                const crop = itemsToShow[selectedMenuIndex];
+                const crop = availableItems[selectedShopIndex];
                 drawCrop(crop.images[0], screenCoord);
             }
         }
@@ -282,25 +294,40 @@ const update = () =>{
 
 canvas.addEventListener("mousemove", (e) =>{
     const point = screenToGrid({x: e.offsetX, y: e.offsetY});
+
     if(isWithinGrid(point))
         highlighted = point;
     else
         highlighted = undefined;
-    menuIndex = screenToMenuIndex({x: e.offsetX, y: e.offsetY});
+
+    if(isWithinShop({x: e.offsetX, y: e.offsetY}))
+        shopIndex = screenToShopIndex({x: e.offsetX, y: e.offsetY});
+    else
+        shopIndex = undefined;
 });
 
 canvas.addEventListener("click", (e) =>{
     const point = screenToGrid({x: e.offsetX, y: e.offsetY});
-    if(menuIndex !== -1){
-        itemsToShow[selectedMenuIndex].selected = false;
-        selectedMenuIndex = menuIndex;
-        itemsToShow[menuIndex].selected = true;
-    }else if(isWithinGrid(point)){
-        const tmp = crops[selectedMenuIndex];
+    if(isWithinShop({x: e.offsetX, y: e.offsetY})){
+        if(shopIndex !== undefined){
+            if(selectedShopIndex !== undefined){
+                availableItems[selectedShopIndex].selected = false;
+            }
+            selectedShopIndex = shopIndex;
+            availableItems[shopIndex].selected = true;
+        }
+    }else if(isWithinGrid(point) && selectedShopIndex !== undefined){
+        const tmp = crops[selectedShopIndex];
         if(money >= tmp.cost){
             grid[point.y][point.x] = new Crop(tmp.name, tmp.images, tmp.cost);
             money -= tmp.cost;
         }
+    }
+    else if(selectedShopIndex !== undefined){
+        availableItems[selectedShopIndex].selected = false;
+        selectedShopIndex = undefined;
+    }else{
+        throw new Error("This should not happen");
     }
 });
 
@@ -353,7 +380,7 @@ const loadRocks = async () =>{
     return result
 };
 
-const drawMenuItem = (item, x, y) =>{
+const drawShopItem = (item, x, y) =>{
     if(item.selected)
         ctx.fillStyle = "#80ff80";
     else
@@ -381,26 +408,26 @@ const drawMenuItem = (item, x, y) =>{
     ctx.fillText(item.name, x + centerX, y + centerY + 50, maxTextWidth);
 };
 
-const drawMenu = (items) =>{
+const drawShop = (items) =>{
     rows = Math.floor(canvas.height / itemHeight) - 1;
     columns = Math.floor(items.length / rows);
     columns += items.length % rows > 0 ? 1 : 0;
-    menuWidth = columns * (itemWidth + margin + border) + margin;
-    menuHeight = rows * (itemHeight + margin + border) + margin;
-    menuOffsetX = canvas.width - menuWidth - 10;
-    menuOffsetY = Math.floor(canvas.height / 2) - Math.floor(menuHeight / 2) + 10;
+    shopWidth = columns * (itemWidth + margin + border) + margin;
+    shopHeight = rows * (itemHeight + margin + border) + margin;
+    shopOffsetX = canvas.width - shopWidth - 10;
+    shopOffsetY = Math.floor(canvas.height / 2) - Math.floor(shopHeight / 2) + 10;
     ctx.fillStyle = "#906060";
     ctx.strokeStyle = "#402020";
     ctx.lineWidth = border;
-    ctx.fillRect(menuOffsetX - border, menuOffsetY, menuWidth + border, menuHeight + border);
-    ctx.strokeRect(menuOffsetX - border, menuOffsetY, menuWidth + border, menuHeight + border);
+    ctx.fillRect(shopOffsetX - border, shopOffsetY, shopWidth + border, shopHeight + border);
+    ctx.strokeRect(shopOffsetX - border, shopOffsetY, shopWidth + border, shopHeight + border);
 
     for(let i = 0; i < columns; i++){
         for(let j = 0; j < rows; j++){
             if(i*rows+j > items.length-1) return;
-            drawMenuItem(items[i*rows + j],
-                menuOffsetX + margin + (itemWidth + margin + border) * i,
-                menuOffsetY + margin + 2 + (itemHeight + margin + border) * j);
+            drawShopItem(items[i*rows + j],
+                shopOffsetX + margin + (itemWidth + margin + border) * i,
+                shopOffsetY + margin + 2 + (itemHeight + margin + border) * j);
         }
     }
 };
@@ -454,8 +481,7 @@ const load = async () =>{
     transformCropsData(cropImages);
     trees = Array.from(t2);
     logo = l;
-    itemsToShow = crops.slice(0, 15)
-    itemsToShow[selectedMenuIndex].selected = true;
+    availableItems = crops.slice(0, availableItemCount)
 };
 
 const main = async () =>{

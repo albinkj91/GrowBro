@@ -337,7 +337,7 @@ canvas.addEventListener("click", (e) =>{
                 money += crop.reward;
                 grid[point.y][point.x] = 0;
             }
-        }else if(selectedShopIndex !== undefined){
+        }else if(!isOccupied(point) && selectedShopIndex !== undefined){
             const tmp = crops[selectedShopIndex];
             if(money >= tmp.cost){
                 grid[point.y][point.x] = new Crop(tmp.name, tmp.images, tmp.cost);

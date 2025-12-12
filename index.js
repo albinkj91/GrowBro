@@ -48,12 +48,13 @@ let trees = [];
 let rocks = [];
 let sun = {x: Math.floor(canvas.width/2), y: 0};
 let availableItems;
-let availableItemCount = 2;
+let availableItemCount = 5;
 let shopIndex;
 let selectedShopIndex;
-let startingMoney = 200;
+let startingMoney = 30;
 let money = startingMoney;
 
+// 0 = grass
 // 1 = green tree
 // 2 = orange tree
 // 3 = single rock
@@ -61,10 +62,10 @@ let money = startingMoney;
 // 5 = tripple rock
 // 6 = water
 const grid = [
-    [1,1,2,5],
-    [2,6,0,0],
-    [6,6,4,0],
-    [6,6,0,0]
+    [0,0,0,0],
+    [0,0,0,0],
+    [0,0,0,0],
+    [0,0,0,0]
 ];
 
 const cropNames = [
@@ -142,7 +143,10 @@ class Crop{
         this.name = name;
         this.images = images;
         this.cost = cost;
+        this.growthInterval = cost * 10;
+        this.reward = this.cost * 1.5 + this.growthInterval * 0.2;
         this.growthStage = 0;
+        this.ticksPassed = 0;
         this.selected = false;
     }
 }
@@ -167,6 +171,10 @@ const gridToScreen = (point) =>{
         x: (offsetX + halfWidth) + halfWidth * (point.x - point.y),
         y: (offsetY + halfHeight) + halfHeight * (point.x + point.y)
     };
+};
+
+const isOccupied = (point) =>{
+    return typeof(grid[point.y][point.x]) == 'object';
 };
 
 const screenToShopIndex = (point) =>{
@@ -201,15 +209,20 @@ const tickSun = () =>{
 
     if(sun.x >= canvas.width + 160){
         sun.x = -160;
-        tickCrops();
     }
 };
 
 const tickCrops = () =>{
     for(let i = 0; i < grid.length; i++){
         for(let j = 0; j < grid[i].length; j++){
-            if(typeof(grid[i][j]) == 'object' && grid[i][j].growthStage < 3)
-                grid[i][j].growthStage++;
+            if(typeof(grid[i][j]) == 'object'){
+                const crop = grid[i][j];
+                crop.ticksPassed++;
+                if(crop.ticksPassed == crop.growthInterval && crop.growthStage < 3){
+                    grid[i][j].growthStage++;
+                    crop.ticksPassed = 0;
+                }
+            }
         }
     }
 };
@@ -228,10 +241,11 @@ const drawSun = () =>{
 
 let startTime = performance.now();
 
-const update = () =>{
+const update = (timestamp) =>{
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     tickSun();
     drawSun();
+    tickCrops();
     ctx.drawImage(logo, 0, 0);
     drawShop(availableItems);
     drawHud();
@@ -316,18 +330,24 @@ canvas.addEventListener("click", (e) =>{
             selectedShopIndex = shopIndex;
             availableItems[shopIndex].selected = true;
         }
-    }else if(isWithinGrid(point) && selectedShopIndex !== undefined){
-        const tmp = crops[selectedShopIndex];
-        if(money >= tmp.cost){
-            grid[point.y][point.x] = new Crop(tmp.name, tmp.images, tmp.cost);
-            money -= tmp.cost;
+    }else if(isWithinGrid(point)){
+        if(isOccupied(point) && selectedShopIndex == undefined){
+            const crop = grid[point.y][point.x];
+            if(shopIndex == undefined && crop.growthStage == 3){
+                money += crop.reward;
+                grid[point.y][point.x] = 0;
+            }
+        }else if(selectedShopIndex !== undefined){
+            const tmp = crops[selectedShopIndex];
+            if(money >= tmp.cost){
+                grid[point.y][point.x] = new Crop(tmp.name, tmp.images, tmp.cost);
+                money -= tmp.cost;
+            }
         }
     }
     else if(selectedShopIndex !== undefined){
         availableItems[selectedShopIndex].selected = false;
         selectedShopIndex = undefined;
-    }else{
-        throw new Error("This should not happen");
     }
 });
 
@@ -461,7 +481,7 @@ const transformCropsData = (cropImages) =>{
                 cropImages[i+2][j],
                 cropImages[i+3][j],
                 cropImages[i+4][j]
-            ], i * cropImages.length + j * j * 10 + 10));
+            ], i * cropImages.length + j * j * 10 + 10, ));
         }
     }
 };

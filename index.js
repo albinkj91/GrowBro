@@ -12,8 +12,8 @@ const cropWidth = 32;
 const cropHeight = 64;
 const halfWidth = Math.floor(tileWidth / 2);
 const halfHeight = Math.floor(tileHeight / 2);
-const gridMaxX = 4;
-const gridMaxY = 4;
+let gridMaxX = 4;
+let gridMaxY = 4;
 const offsetX = Math.floor(canvas.width / 2) - halfWidth;
 const offsetY = Math.floor(canvas.height / 2) - Math.floor((gridMaxY * tileHeight)/2);
 
@@ -51,8 +51,9 @@ let availableItems;
 let availableItemCount = 5;
 let shopIndex;
 let selectedShopIndex;
-let startingMoney = 30;
-let money = startingMoney;
+let money = 30;
+let totalMoney = 30;
+let unlockLandBoundary = 1000;
 
 // 0 = grass
 // 1 = green tree
@@ -143,8 +144,8 @@ class Crop{
         this.name = name;
         this.images = images;
         this.cost = cost;
-        this.growthInterval = cost * 10;
-        this.reward = this.cost * 1.5 + this.growthInterval * 0.2;
+        this.growthInterval = cost * 3;
+        this.reward = this.cost * 1.5 + this.growthInterval * 0.6;
         this.growthStage = 0;
         this.ticksPassed = 0;
         this.selected = false;
@@ -258,10 +259,14 @@ const update = (timestamp) =>{
     }
 
     for(let i = 0; i < gridMaxY; i++){
+        if(grid[i] == undefined)
+            grid[i] = [];
         for(let j = 0; j < gridMaxX; j++){
             let gridCoord = {x: j, y: i};
             let screenCoord = gridToScreen(gridCoord);
             switch(grid[i][j]){
+                case undefined:
+                    grid[i][j] = 0;
                 case 0:
                     drawTile(tiles[1], screenCoord);
                     break;
@@ -335,7 +340,15 @@ canvas.addEventListener("click", (e) =>{
             const crop = grid[point.y][point.x];
             if(shopIndex == undefined && crop.growthStage == 3){
                 money += crop.reward;
+                totalMoney += crop.reward;
                 grid[point.y][point.x] = 0;
+                if(totalMoney > unlockLandBoundary){
+                    unlockLandBoundary *= 2.5;
+                    gridMaxX += 1;
+                    gridMaxY += 1;
+                    availableItemCount += 1;
+                    availableItems = crops.slice(0, availableItemCount)
+                }
             }
         }else if(!isOccupied(point) && selectedShopIndex !== undefined){
             const tmp = crops[selectedShopIndex];
